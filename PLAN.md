@@ -9,3 +9,7 @@ SPEC v1 is accepted. Use a single mixed backend/terminal application implementat
 Ownership: implementer owns application, packaging, README and implementation tests. QA owns docs/evidence and isolated test harness. Orchestrator owns SPEC, PLAN, tracker, decisions and task cards. Shared application files are edited only by implementer until review corrections finish.
 
 Invariants: regex protection dominates both cleanup flags; no container mutation; preview limits execution; invalid configuration fails closed; destructive tests never target the host daemon.
+
+## Delivery status
+
+Implementation and corrective review complete. Production source verified at 2dc32e1; independent real-terminal and isolated-Docker acceptance recorded in docs/qa/results.md. QA harness corrections reviewed at 0fd5d42; final unit/integration suite has 57 passing tests and mypy passes. Owned test resources cleaned. Historical E2E evidence and later mocked harness regression evidence are separately identified.

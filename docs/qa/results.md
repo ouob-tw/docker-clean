@@ -75,3 +75,10 @@ uv run python tests/qa_e2e/run_terminal.py
 - RED：在 `6097448` 的舊 harness，模擬 subprocess 權限拒絕後應拋出錯誤的測試，實際因 `DID NOT RAISE CalledProcessError` 失敗。見 `evidence/harness-boundary-red.log`。
 - GREEN：修正後 `uv run pytest tests/unit/test_qa_harness.py -q`，7 passed。另涵蓋成功 inventory 的 ID／registry port tag／無 tag／缺少目標，以及管理命令不繼承 remote context。見 `evidence/harness-boundary-green.log`。
 - 此處使用 mock subprocess，是 harness 邊界單元測試，**不是新增 Docker E2E 證據**。修正後再次建立 daemon、重跑破壞性驗收為 **NOT_EXECUTED**；原有真實執行證據維持原版本，不回寫或冒充本次修正版執行。原紀錄未觀察到連線錯誤被誤判為刪除成功；完整 container equality、成功 Docker 原生結果與既有 image 保留檢查仍是原執行的獨立證據。
+
+## 最終整合核對
+
+- `0fd5d42` 的 QA 修正已通過 Standards 與 Spec 兩路獨立複查，沒有未處理發現；Spec reviewer 另執行 7 項 harness 測試通過。
+- 主控於 `0fd5d42` 執行 `uv run pytest tests/unit tests/integration -q`：57 passed（4.06s）；`uv run mypy src`：6 source files PASS。
+- `git diff --exit-code 2dc32e1 0fd5d42 -- src pyproject.toml uv.lock` 通過：實際驗收的產品原始碼、依賴設定及 lockfile 完全相同，後續僅新增 QA 腳本、測試、證據及文件。
+- 主控核對專用 DinD 容器已不存在；沒有獨立 worktree 或本次仍運行的 agent。未知來源的 `.env` 與 `.serena/` 保持原樣、不納入提交。

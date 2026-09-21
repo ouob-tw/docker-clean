@@ -4,10 +4,12 @@
 
 **Blocked by:** 01 for final execution; scenario drafting and isolated environment preparation can start immediately.
 
-**Status:** ready-for-agent
+**Status:** verified
 
-- [ ] Requirement-derived scenarios drafted independently before implementation inspection.
-- [ ] Real terminal TUI and real isolated Docker deletion evidence recorded.
-- [ ] Integrated commit, rerunnable commands and outcomes documented.
-- [ ] Every SPEC criterion mapped to PASS/FAIL/UNPROVEN/NOT_EXECUTED.
-- [ ] Owned test resources cleaned and existing host resources unchanged.
+- [x] Requirement-derived scenarios drafted independently before implementation inspection.
+- [x] Real terminal TUI and real isolated Docker deletion evidence recorded.
+- [x] Integrated commit, rerunnable commands and outcomes documented.
+- [x] Every SPEC criterion mapped to PASS/FAIL/UNPROVEN/NOT_EXECUTED.
+- [x] Owned test resources cleaned; all existing host container/image IDs retained (not a guarantee of unchanged unrelated runtime state).
+
+Evidence: docs/qa/results.md; QA commit 6097448; added harness independent review tracked in final review record.

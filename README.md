@@ -58,4 +58,4 @@ uv run pytest tests/integration      # Textual Pilot，使用假的 Docker
 uv run pytest tests/unit tests/integration
 ```
 
-單元／Pilot 測試不能代替真正終端或 Docker 的刪除證據。獨立驗收資料放在 `docs/evidence/`；破壞性驗證只允許專用隔離 Engine，不能操作主機既有映像。
+單元／Pilot 測試不能代替真正終端或 Docker 的刪除證據。獨立驗收結果見 [QA 紀錄](docs/qa/results.md)，重跑方式見 [驗收指令](tests/qa_e2e/README.md)；破壞性驗證只允許專用隔離 Engine，不能操作主機既有映像。
