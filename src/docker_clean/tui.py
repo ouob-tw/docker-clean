@@ -17,7 +17,14 @@ class CleanerApp(App):
     #images { height: 12; }
     #output { height: auto; padding: 1; }
     Horizontal { height: auto; }
-    Button { margin-right: 1; }
+    Button {
+        width: auto;
+        min-width: 0;
+        height: 1;
+        border: none;
+        padding: 0 1;
+        margin-right: 1;
+    }
     #status { height: auto; padding: 1; }
     """
     BINDINGS = [("ctrl+q", "quit", "離開")]
