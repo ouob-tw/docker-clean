@@ -59,3 +59,21 @@ async def test_select_image_generates_escaped_anchored_rules(tmp_path):
         text = app.query_one("#rules", TextArea).text
         assert r"^registry:5000/a:1\.2$" in text
         assert "^other:1$" in text
+
+
+async def test_preview_reconciles_selection_after_external_image_removal(tmp_path):
+    docker = DockerFixture()
+    app = CleanerApp(tmp_path / "config.yaml", docker)
+    async with app.run_test(size=(140, 60)) as pilot:
+        await pilot.click("#save")
+        app.query_one(DataTable).focus()
+        await pilot.press("enter")
+        assert app.selected
+        docker.snapshot = lambda: {}
+        await pilot.click("#preview")
+        await pilot.click("#select")
+        assert app.selected == set()
+        assert app.query_one(DataTable).row_count == 0
+        assert app.query_one("#rules", TextArea).text == ""
+        assert app.query_one("#confirm", Button).disabled
+        assert docker.calls == []

@@ -99,15 +99,16 @@ class CleanerApp(App):
             if self.docker is None:
                 self.docker = Docker()
             self.images = self.docker.snapshot()
-            self.selected.intersection_update(self.images)
             self.update_table()
         except CleanError as exc:
             self.images = {}
+            self.selected.clear()
             self.query_one(DataTable).clear()
             self.message(str(exc))
 
     def update_table(self) -> None:
         self.invalidate()
+        self.selected.intersection_update(self.images)
         try:
             preview = plan(self.current(), self.images)
         except CleanError as exc:
@@ -170,6 +171,7 @@ class CleanerApp(App):
                 if self.docker is None:
                     self.docker = Docker()
                 self.images = self.docker.snapshot()
+                self.update_table()
                 self.preview = plan(config, self.images, revision)
                 self.query_one("#output", Static).update(render(self.preview))
                 has_targets = any(entry.targets for entry in self.preview.entries)
