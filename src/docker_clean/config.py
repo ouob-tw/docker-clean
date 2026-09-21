@@ -5,6 +5,7 @@ import re
 import tempfile
 
 import yaml
+from textual.theme import BUILTIN_THEMES
 
 
 class CleanError(Exception):
@@ -16,12 +17,15 @@ class Config:
     keep: tuple[str, ...] = ()
     remove_tags: bool = False
     force: bool = False
+    theme: str = "terminal"
 
     def validate(self) -> None:
         if not isinstance(self.keep, tuple) or not all(isinstance(x, str) for x in self.keep):
             raise CleanError("keep 必須是字串陣列")
         if type(self.remove_tags) is not bool or type(self.force) is not bool:
             raise CleanError("cleanup 選項必須是布林值")
+        if not isinstance(self.theme, str) or self.theme not in {"terminal", *BUILTIN_THEMES}:
+            raise CleanError("theme 必須是 terminal 或有效的內建主題名稱")
         for pattern in self.keep:
             try:
                 re.compile(pattern)
@@ -48,22 +52,23 @@ def load(path: Path, *, allow_missing: bool = False) -> tuple[Config, bytes | No
         data = yaml.safe_load(raw)
     except (yaml.YAMLError, UnicodeError) as exc:
         raise CleanError(f"YAML 錯誤: {exc}") from exc
-    if not isinstance(data, dict) or set(data) - {"keep", "cleanup"}:
-        raise CleanError("設定必須是僅含 keep 與 cleanup 的 mapping")
+    if not isinstance(data, dict) or set(data) - {"keep", "cleanup", "theme"}:
+        raise CleanError("設定必須是僅含 keep、cleanup 與 theme 的 mapping")
     keep = data.get("keep")
     cleanup = data.get("cleanup", {})
     if not isinstance(keep, list) or not all(isinstance(x, str) for x in keep):
         raise CleanError("keep 必須是字串陣列；空清單請明確使用 keep: []")
     if not isinstance(cleanup, dict) or set(cleanup) - {"remove_tags", "force"}:
         raise CleanError("cleanup 必須僅含 remove_tags 與 force")
-    config = Config(tuple(keep), cleanup.get("remove_tags", False), cleanup.get("force", False))
+    config = Config(tuple(keep), cleanup.get("remove_tags", False), cleanup.get("force", False),
+                    data.get("theme", "terminal"))
     config.validate()
     return config, raw
 
 
 def save(path: Path, config: Config, expected: bytes | None) -> bytes:
     config.validate()
-    raw = yaml.safe_dump({"keep": list(config.keep), "cleanup": {
+    raw = yaml.safe_dump({"theme": config.theme, "keep": list(config.keep), "cleanup": {
         "remove_tags": config.remove_tags, "force": config.force}}, allow_unicode=True).encode()
     if read_bytes(path) != expected:
         raise CleanError("設定已被外部修改；請重新載入")

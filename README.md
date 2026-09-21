@@ -17,9 +17,12 @@ docker-clean tui
 
 預設設定為 `~/.config/docker-clean/config.yaml`，也可在子命令後指定 `--config /path/config.yaml`。設定不存在時只能由 TUI 建立，`clean` 會停止。TUI 每行一條規則，可直接新增、編輯或刪除；選項預設關閉。Enter 或點擊 image 列可勾選，再按「產生規則」把實際 tag 轉成跳脫且有 `^...$` 錨點的 Regex。無 tag 的 image 不產生名稱規則。
 
-儲存後按「預覽」，檢查下方完整內容，再按「確認刪除」；「取消」不操作 Docker。CLI 須輸入完整 `DELETE` 才執行。修改規則或選項會使舊預覽失效。TUI 的列表可水平捲動，完整預覽可垂直捲動，包含完整 ID、所有 tag、建立時間、bytes、引用容器與原因；Ctrl+Q 離開。
+儲存後按「預覽」，檢查下方完整內容，再按「確認刪除」；「取消」不操作 Docker。CLI 須輸入完整 `DELETE` 才執行。修改規則或選項會使舊預覽失效。列表依序顯示 tag（長名稱換行）、人類可讀大小、精確到秒的建立日期、動作原因；Space／Enter／點擊可勾選，不跳回第一列。完整 ID 與引用容器保留在下方詳細預覽；Ctrl+Q 離開。
+
+預設 `theme: terminal` 使用終端原生 ANSI 色盤及預設前景／背景，因此隨終端配色顯示。Ctrl+T 開啟主題選單，切換後自動存入 YAML，下次沿用；選回 `terminal` 可恢復跟隨終端。切換主題只存主題，不順便儲存規則編輯或清理選項。
 
 ```yaml
+theme: terminal
 keep:
   - '^postgres:16$'
   - '^myorg/.*:.*$'
@@ -33,6 +36,8 @@ cleanup:
 設定讀取、型別、YAML、Regex 任一錯誤皆停止；不會退回沒有保護的設定。未知欄位也拒絕。儲存完整驗證後以原子替換寫入，偵測外部修改時須重新載入。
 
 ## 四種模式
+
+畫面的「逐一移除標籤」對同一 image ID 的全部 tag 操作，並非刪除同名 repository 下不同版本的所有 image；保留規則優先。
 
 | 移除 tag | force | 未被規則保護的 image |
 |---|---|---|

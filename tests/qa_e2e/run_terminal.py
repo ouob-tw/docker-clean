@@ -12,7 +12,7 @@ from run_cli import ENV, ROOT, exists
 
 def select(identifier):
     ids = sorted(set(docker('image', 'ls', '-aq', '--no-trunc').stdout.split()))
-    t.click(10, 15)
+    t.focus_table()
     t.keys(*(['Up'] * (len(ids) + 1)))
     t.keys(*(['Down'] * ids.index(identifier)))
     t.keys('Enter')
@@ -41,44 +41,44 @@ def main():
             time.sleep(0.2)
         assert 'remove_tags=False, force=False' in screen
         replace_rules('^qa-ui-script:1\\.2$')
-        t.click(4, 12)
+        t.click_button('儲存')
         assert 'qa-ui-script' in path.read_text()
         t.capture('replay-exact-rule')
         replace_rules('^qa-ui-script:')
         t.keys('Enter'); t.text('^busybox:')
-        t.click(4, 12)
+        t.click_button('儲存')
         assert 'busybox' in path.read_text()
         replace_rules('.')
-        t.click(4, 12)
+        t.click_button('儲存')
         assert 'busybox' not in path.read_text()
         # Selection creates anchored, escaped exact tag rules.
         select(target)
-        t.click(6, 26); t.click(4, 12)
+        t.click_button('產生規則'); t.click_button('儲存')
         assert '^qa\\-ui\\-script:1\\.2$' in path.read_text()
         t.capture('replay-generated')
         # External save conflict must preserve external bytes.
         external = 'keep: ["."]\n'
         path.write_text(external)
-        t.click(4, 12)
+        t.click_button('儲存')
         assert path.read_text() == external
         assert '外部修改' in t.capture('replay-external-conflict')
-        t.click(15, 12)
+        t.click_button('重新載入')
         # Selected image disappears between user actions: exact original crash trigger.
         docker('image', 'rm', '--force', '--no-prune', target)
-        t.click(17, 26); t.click(6, 26); t.click(4, 12)
+        t.click_button('預覽'); t.click_button('產生規則'); t.click_button('儲存')
         assert '已儲存' in t.capture('replay-stale-selection')
         # Preview -> cancel leaves full inventory unchanged.
         doomed = image('qa-ui-script-delete:latest')
         replace_rules('^(?!qa-ui-script-delete:)')
-        t.click(4, 12); t.click(17, 26)
+        t.click_button('儲存'); t.click_button('預覽')
         before = docker('image', 'ls', '-aq', '--no-trunc').stdout
-        t.click(39, 26)
+        t.click_button('取消')
         assert '已取消' in t.capture('replay-cancel')
         assert before == docker('image', 'ls', '-aq', '--no-trunc').stdout
         # Preview -> confirm performs actual deletion and displays native outcomes.
-        t.click(17, 26)
+        t.click_button('預覽')
         t.capture('replay-confirm-preview')
-        t.click(27, 26)
+        t.click_button('確認刪除')
         for _ in range(30):
             screen = t.capture('replay-deleted')
             if '執行完畢' in screen:

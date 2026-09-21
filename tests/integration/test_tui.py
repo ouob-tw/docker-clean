@@ -77,3 +77,72 @@ async def test_preview_reconciles_selection_after_external_image_removal(tmp_pat
         assert app.query_one("#rules", TextArea).text == ""
         assert app.query_one("#confirm", Button).disabled
         assert docker.calls == []
+
+
+async def test_selection_keeps_cursor_and_scroll_and_accepts_space(tmp_path):
+    docker = DockerFixture()
+    images = {f"sha256:{i:064x}": Image(f"sha256:{i:064x}", (f"app:{i}",),
+              1234, "2026-09-21T12:34:56.123456+08:00") for i in range(30)}
+    docker.snapshot = lambda: images
+    app = CleanerApp(tmp_path / "config.yaml", docker)
+    async with app.run_test(size=(120, 40)) as pilot:
+        table = app.query_one(DataTable)
+        table.focus()
+        await pilot.press(*(["down"] * 15))
+        await pilot.pause()
+        before = table.scroll_offset
+        await pilot.press("enter")
+        assert table.cursor_row == 15
+        assert table.scroll_offset == before
+        assert list(images)[15] in app.selected
+        await pilot.press("space")
+        assert table.cursor_row == 15
+        assert table.scroll_offset == before
+        assert list(images)[15] not in app.selected
+        assert not docker.calls
+
+
+async def test_compact_columns_wrap_tags_and_keep_full_id_in_preview(tmp_path):
+    docker = DockerFixture()
+    image = Image("sha256:" + "b" * 64, ("registry.example:5000/" + "long-name-" * 8 + ":1.2",),
+                  1536, "2026-09-21T12:34:56.123456+08:00")
+    docker.snapshot = lambda: {image.id: image}
+    app = CleanerApp(tmp_path / "config.yaml", docker)
+    async with app.run_test(size=(80, 40)) as pilot:
+        await pilot.pause()
+        table = app.query_one(DataTable)
+        assert [str(column.label) for column in table.ordered_columns] == [
+            "選", "tag", "大小", "建立日期", "動作原因"]
+        image = next(iter(docker.snapshot().values()))
+        assert table.rows[table.ordered_rows[0].key].height > 1
+        assert str(table.get_cell(image.id, "size")) == "1.5 KiB"
+        assert str(table.get_cell(image.id, "created")) == "2026-09-21 12:34:56"
+        assert image.id in str(app.query_one("#output", Static).render())
+        for checkbox in app.query(Checkbox):
+            checkbox.focus()
+            await pilot.pause()
+            assert checkbox.region.height == 1
+
+
+async def test_theme_follows_terminal_and_persists_without_saving_draft_rules(tmp_path):
+    from docker_clean.config import save
+    path = tmp_path / "config.yaml"
+    save(path, Config(("^saved:",)), None)
+    app = CleanerApp(path, DockerFixture())
+    async with app.run_test(size=(120, 40)) as pilot:
+        assert app.theme == "terminal"
+        assert app.native_ansi_color
+        app.query_one("#rules", TextArea).load_text("unfinished[")
+        app.theme = "nord"
+        await pilot.pause()
+        assert load(path)[0] == Config(("^saved:",), theme="nord")
+        assert app.query_one("#rules", TextArea).text == "unfinished["
+    reopened = CleanerApp(path, DockerFixture())
+    async with reopened.run_test(size=(120, 40)) as pilot:
+        assert reopened.theme == "nord"
+        external = b"keep: ['^external:']\n"
+        path.write_bytes(external)
+        reopened.theme = "terminal"
+        await pilot.pause()
+        assert path.read_bytes() == external
+        assert "尚未儲存" in str(reopened.query_one("#status", Static).render())

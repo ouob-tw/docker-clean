@@ -6,7 +6,7 @@ from docker_clean.config import CleanError, Config, load, save
 @pytest.mark.parametrize("text", ["", "[]", "keep: null", "keep: x", "keep: [1]",
     "keep: ['[']", "keep: []\ncleanup: []", "keep: []\ncleanup: {force: 'false'}",
     "keep: []\ncleanup: {remove_tags: 1}", "keep: []\ncleanup: {forcee: true}",
-    "keep: []\nother: []", "keep: ["])
+    "keep: []\nother: []", "keep: [", "keep: []\ntheme: []", "keep: []\ntheme: unknown-theme"])
 def test_invalid_configuration_fails_closed(tmp_path, text):
     path = tmp_path / "config.yaml"
     path.write_text(text)
