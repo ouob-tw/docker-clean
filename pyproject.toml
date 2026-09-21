@@ -1,0 +1,25 @@
+[project]
+name = "docker-clean"
+version = "0.1.0"
+description = "Previewed local Docker image cleanup with regex retention"
+requires-python = ">=3.11"
+dependencies = ["textual>=6.6,<9", "PyYAML>=6,<7"]
+
+[project.scripts]
+docker-clean = "docker_clean.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = ["pytest>=8", "pytest-asyncio>=0.24", "mypy>=1.11", "types-PyYAML"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/unit"]
+asyncio_mode = "auto"
+markers = ["integration: Textual UI with fake Docker"]
+
+[tool.mypy]
+files = ["src"]
+check_untyped_defs = true
