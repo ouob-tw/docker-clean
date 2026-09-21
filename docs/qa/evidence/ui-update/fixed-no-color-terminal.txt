@@ -1,0 +1,42 @@
+ ⭘                                                             Docker Clean
+Regex 保留規則：每行一條，可直接新增、修改或刪除；搜尋匹配。                                                                              [7m
+▊[0m[39m[49m▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▎
+[7m▊[0m[39m[49m                                                                                                                                        ▎
+[7m▊[0m[39m[49m                                                                                                                                        ▎
+[7m▊[0m[39m[49m                                                                                                                                        ▎
+[7m▊[0m[39m[49m                                                                                                                                        ▎
+[7m▊[0m[39m[49m▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▎
+▐[2mX[0m[39m[49m▌ 逐一移除標籤   ▐[2mX[0m[39m[49m▌ 強制刪除 image
+ [1m 儲存 [0m[39m[49m   [1m 重新載入 [0m[39m[49m   [1m 重新盤點 [0m[39m[49m
+Space／Enter／點擊勾選，再按「產生規則」。完整 ID 與容器引用見下方預覽。
+[1m 選   tag                                               大小       建立日期             動作原因                                        [0;7m[39m[49m  [0m[39m[49m
+ □    無 tag                                            313.2 MiB  2026-09-18 00:42:20  刪除 image: 按完整 ID 刪除
+ □    無 tag                                            313.2 MiB  2026-09-21 13:39:32  刪除 image: 按完整 ID 刪除
+ □    gohakka-task7-harness-integration-fakes:latest    3.7 GiB    2026-07-30 02:45:13  刪除 image: 按完整 ID 刪除
+ □    gohakka-f5-retirement-testexec-final-2265286-int  3.7 GiB    2026-07-30 06:01:43  刪除 image: 按完整 ID 刪除
+      egration-product-consumer:latest
+ □    docker.n8n.io/n8nio/n8n:latest                    1.0 GiB    2026-09-18 07:42:07  跳過: 容器引用；force 未啟用
+ □    gohakka-qa-verify-integration-migrate:latest      3.7 GiB    2026-07-27 16:19:48  刪除 image: 按完整 ID 刪除
+ □    f5-retirement-qa-swy-2291363-integration-orchest  3.7 GiB    2026-07-30 06:07:14  刪除 image: 按完整 ID 刪除
+      rator:latest
+ □    f5-quarantine-debug2-swy-1778295-integration-mig  3.7 GiB    2026-07-30 04:35:06  刪除 image: 按完整 ID 刪除
+[7m                                                                                                                                      [0m[39m[49m▏
+ [1m 產生規則 [0m[39m[49m   [1m 預覽 [0m[39m[49m   [1;2m 確認刪除 [0m[39m[49m   [1m 取消 [0m[39m[49m
+
+ 設定: /tmp/toga-ui-qa.yaml
+
+
+ remove_tags=False, force=False
+ 警告：沒有保留規則 (keep: [])
+ 刪除 image | sha256:001fb51d8d77e8a55108d43c3b27b61ab96c390f2a66ade2e81246231869a84c
+   tags: 無 tag
+   大小: 328383870 bytes（共用層不可加總） | 建立: 2026-09-18T00:42:20.40945036+08:00
+   容器: 無 | force=false
+   原因: 按完整 ID 刪除
+   目標: sha256:001fb51d8d77e8a55108d43c3b27b61ab96c390f2a66ade2e81246231869a84c
+
+ 刪除 image | sha256:009020558c6f61960137d8221e143d11b166a2892acf001f29db648e0a8d37ac
+   tags: 無 tag
+   大小: 328404392 bytes（共用層不可加總） | 建立: 2026-09-21T13:39:32.387386325+08:00
+   容器: 無 | force=false
+[1m ^q [0m[39m[49m離開 [1m ^t [0m[39m[49m主題                                                                                                               ▏[1m^p[0m[39m[49m palette

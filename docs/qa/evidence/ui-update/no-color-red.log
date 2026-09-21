@@ -1,0 +1,38 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_no_color_terminal_theme_keeps_default_foreground_and_background _____
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-819/test_no_color_terminal_theme_k0')
+
+    def test_no_color_terminal_theme_keeps_default_foreground_and_background(tmp_path):
+        master, slave = pty.openpty()
+        code = """
+    from pathlib import Path
+    import sys
+    from docker_clean.tui import CleanerApp
+    class EmptyEngine:
+        def snapshot(self): return {}
+    CleanerApp(Path(sys.argv[1]), EmptyEngine()).run()
+    """
+        process = subprocess.Popen(
+            [sys.executable, "-c", code, str(tmp_path / "config.yaml")],
+            stdin=slave, stdout=slave, stderr=slave,
+            env={**os.environ, "NO_COLOR": "1", "TERM": "xterm-256color", "COLORTERM": "truecolor"},
+        )
+        os.close(slave)
+        output = b""
+        try:
+            deadline = time.monotonic() + 10
+            while b"Docker Clean" not in output and time.monotonic() < deadline:
+                if select.select([master], [], [], 0.2)[0]:
+                    output += os.read(master, 65536)
+            assert b"Docker Clean" in output, output[-1000:]
+            header = output[:output.index(b"Docker Clean") + len(b"Docker Clean")]
+>           assert b"38;2;0;0;0;48;2;0;0;0m" not in header, "Header rendered black on black"
+E           AssertionError: Header rendered black on black
+E           assert b'38;2;0;0;0;48;2;0;0;0m' not in b'\x1b[?1049h\x1b[?1000h\x1b[?1003h\x1b[?1015h\x1b[?1006h\x1b[?25l\x1b[?1004h\x1b[>25u\x1b[?2026$p\x1b[?2048$p\x1b[?20...[48;2;0;0;0m \x1b[0m\x1b[38;2;0;0;0;48;2;0;0;0m                         \x1b[0m\x1b[38;2;0;0;0;48;2;0;0;0mDocker Clean'
+
+tests/integration/test_terminal_colors.py:34: AssertionError
+=========================== short test summary info ============================
+FAILED tests/integration/test_terminal_colors.py::test_no_color_terminal_theme_keeps_default_foreground_and_background
+1 failed in 0.46s

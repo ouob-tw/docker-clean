@@ -1,0 +1,42 @@
+ ⭘                                                             Docker Clean
+Regex 保留規則：每行一條，可直接新增、修改或刪除；搜尋匹配。
+▊▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▎
+▊ ^toga-draft$                                                                                                                           ▎
+▊                                                                                                                                        ▎
+▊                                                                                                                                        ▎
+▊                                                                                                                                        ▎
+▊▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▎
+▐X▌ 逐一移除標籤   ▐X▌ 強制刪除 image
+  儲存     重新載入     重新盤點
+Space／Enter／點擊勾選，再按「產生規則」。完整 ID 與容器引用見下方預覽。
+ 選   tag                                               大小       建立日期             動作原因                                        ▇▇
+ □    無 tag                                            313.2 MiB  2026-09-21 01:08:41  刪除 image: 按完整 ID 刪除                      ▇▇
+ □    gohakka-task7-red-integration-orchestrator:lates  3.7 GiB    2026-07-25 19:50:32  移除 tag: 最後一個 tag 可能同時刪除 image
+      t
+ ✓    f5-retirement-feature-swy-2129134-integration-fa  3.7 GiB    2026-07-30 05:43:07  移除 tag: 最後一個 tag 可能同時刪除 image
+      kes:latest
+ □    f5-retirement-feature-swy-2129134-integration-pr  3.7 GiB    2026-07-30 05:43:07  移除 tag: 最後一個 tag 可能同時刪除 image
+      oduct-consumer:latest
+ □    async-durability-qa-integration-migrate:latest    3.7 GiB    2026-07-25 20:55:06  移除 tag: 最後一個 tag 可能同時刪除 image
+ □    gohakka-f5-retirement-testexec-rerun-2260076-int  3.7 GiB    2026-07-30 06:01:01  移除 tag: 最後一個 tag 可能同時刪除 image
+      egration-orchestrator:latest
+                                                                                                                                      ▏
+  產生規則     預覽     確認刪除     取消
+
+ 主題 dracula 已儲存；terminal 使用終端原生配色。
+
+
+ remove_tags=True, force=False
+ 刪除 image | sha256:001fb51d8d77e8a55108d43c3b27b61ab96c390f2a66ade2e81246231869a84c
+   tags: 無 tag
+   大小: 328383870 bytes（共用層不可加總） | 建立: 2026-09-18T00:42:20.40945036+08:00
+   容器: 無 | force=false
+   原因: 按完整 ID 刪除
+   目標: sha256:001fb51d8d77e8a55108d43c3b27b61ab96c390f2a66ade2e81246231869a84c
+
+ 刪除 image | sha256:009020558c6f61960137d8221e143d11b166a2892acf001f29db648e0a8d37ac
+   tags: 無 tag
+   大小: 328404392 bytes（共用層不可加總） | 建立: 2026-09-21T13:39:32.387386325+08:00
+   容器: 無 | force=false
+   原因: 按完整 ID 刪除
+ ^q 離開  ^t 主題                                                                                                               ▏^p palette

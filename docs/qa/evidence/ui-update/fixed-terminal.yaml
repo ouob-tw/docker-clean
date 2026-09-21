@@ -1,0 +1,5 @@
+cleanup:
+  force: false
+  remove_tags: false
+keep: []
+theme: terminal
