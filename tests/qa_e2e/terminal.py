@@ -34,7 +34,7 @@ def focus_table():
     lines = subprocess.check_output(['tmux', 'capture-pane', '-p', '-t', SESSION], text=True).splitlines()
     for row, line in enumerate(lines, 1):
         if '選' in line and 'tag' in line and '建立日期' in line:
-            click(3, row + 1)
+            click(3, row)
             return
     raise AssertionError('Image table not visible')
 

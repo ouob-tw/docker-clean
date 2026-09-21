@@ -4,6 +4,7 @@ import shlex
 import subprocess
 import time
 import uuid
+import yaml
 
 import terminal as t
 from engine import QA_ROOT, docker, guard, image
@@ -54,7 +55,8 @@ def main():
         # Selection creates anchored, escaped exact tag rules.
         select(target)
         t.click_button('產生規則'); t.click_button('儲存')
-        assert '^qa\\-ui\\-script:1\\.2$' in path.read_text()
+        assert set(yaml.safe_load(path.read_text())['keep']) == {
+            '.', r'^qa\-ui\-script:1\.2$', r'^qa\-ui\-script:alias$'}
         t.capture('replay-generated')
         # External save conflict must preserve external bytes.
         external = 'keep: ["."]\n'
