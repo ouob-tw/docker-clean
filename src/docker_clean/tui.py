@@ -54,9 +54,11 @@ class CleanerApp(App):
     BINDINGS = [("ctrl+q", "quit", "離開"), ("ctrl+t", "change_theme", "主題")]
 
     def __init__(self, path: Path, docker: Docker | None = None) -> None:
-        super().__init__()
+        # Choose the native-color NO_COLOR filter before registering our theme.
+        super().__init__(ansi_color=True)
         self.register_theme(replace(BUILTIN_THEMES["ansi-dark"], name="terminal"))
         self.theme = "terminal"
+        self.ansi_color = None
         self.path = path
         self.docker = docker
         self.revision: bytes | None = None
