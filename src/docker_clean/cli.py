@@ -1,5 +1,11 @@
 import argparse
+import os
+import sys
 from pathlib import Path
+
+# Multiplexers can report cell coordinates even after advertising pixel support.
+# This supported Textual setting must precede imports that load its constants.
+os.environ["TEXTUAL_SMOOTH_SCROLL"] = "0"
 
 from .config import CleanError, load
 from .engine import Docker
@@ -13,6 +19,10 @@ def main() -> int:
     args = parser.parse_args()
     try:
         if args.command == "tui":
+            if sys.stdout.isatty():
+                # Clear pixel/resize modes a previous TUI may have left enabled.
+                sys.stdout.write("\x1b[?1016l\x1b[?2048l")
+                sys.stdout.flush()
             from .tui import CleanerApp
             CleanerApp(args.config).run()
             return 0
