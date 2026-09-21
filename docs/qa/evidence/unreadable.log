@@ -1,0 +1,3 @@
+停止: 無法讀取設定: [Errno 13] Permission denied: '/tmp/docker-clean-qa-toga-20260921/unreadable.yaml'
+
+EXIT=1

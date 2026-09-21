@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "revision": "2dc32e1aae3cd88e828af71c5bd2fb475f702dba",
+  "actions": [
+    "default-options-off",
+    "add-edit-delete-rule",
+    "row-selection-generated-exact-regex",
+    "external-save-rejected",
+    "selected-disappearance-preview-generate",
+    "preview-cancel",
+    "preview-confirm-real-delete-visible-results"
+  ]
+}

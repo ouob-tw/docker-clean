@@ -1,0 +1,61 @@
+remove_tags=False, force=False
+保留 | sha256:0f505234dd2bc03222c85d1a1d57f7e0289991acf2053a263390994558aa0939
+  tags: registry.example:5000/team/app:1.2
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:35:15.124808402Z
+  容器: 無 | force=false
+  原因: registry.example:5000/team/app:1.2 符合 '^(?!qa-case-)'
+  目標: 無
+
+刪除 image | sha256:347d82c558c6957bf1bb694257ca91a16a8605c7d1a66f7ae074a83abfb1bf81
+  tags: qa-case-change-config:latest
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:39:45.142864238Z
+  容器: 無 | force=false
+  原因: 按完整 ID 刪除
+  目標: sha256:347d82c558c6957bf1bb694257ca91a16a8605c7d1a66f7ae074a83abfb1bf81
+
+保留 | sha256:5617709a682aaf2892782a41920ef1362a6f206fc934cfd56c8731f052e5e3db
+  tags: qa-running:latest
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:35:17.095585076Z
+  容器: qa-running (running, 72c2f7859ef6ee3cbfed4d2e0861403e7781d598e7f747a3faa3a535b54c5c8d) | force=false
+  原因: qa-running:latest 符合 '^(?!qa-case-)'
+  目標: 無
+
+保留 | sha256:6c84bd8e78666adfb28f5d44f94ed16d59c2c7d08a5190da5020eecbfd653dcc
+  tags: qa-overwrite:latest
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:35:21.104575327Z
+  容器: 無 | force=false
+  原因: qa-overwrite:latest 符合 '^(?!qa-case-)'
+  目標: 無
+
+保留 | sha256:7aa1b3c56f9a1d954d49fa8e8a00d5b75882459f34f40420b01c9fc425770c05
+  tags: qa-stopped:latest
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:35:18.105149463Z
+  容器: qa-stopped (created, 4b7754593f405b298e086cb5b2f2320fa73df46e2538f0f6a63887aabdaa82b6) | force=false
+  原因: qa-stopped:latest 符合 '^(?!qa-case-)'
+  目標: 無
+
+保留 | sha256:7b79fd5d8b4bf20016ffd64fb3c03ca83fc53f3ac4dff4e545b67428bf8a4815
+  tags: app:1x2
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:35:16.096390808Z
+  容器: 無 | force=false
+  原因: app:1x2 符合 '^(?!qa-case-)'
+  目標: 無
+
+保留 | sha256:db287cb6be81219cd18c1d82b70908f5d33eb028568b456f78eedff2ff2930e4
+  tags: busybox:1.37
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2024-09-26T21:31:42Z
+  容器: 無 | force=false
+  原因: busybox:1.37 符合 '^(?!qa-case-)'
+  目標: 無
+
+保留 | sha256:f945fc376e563e944cae978299d8713cb424b29d706df04c59000116a2ae8c43
+  tags: namespace/postgres:16, postgres:16, postgres:160
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:35:14.978119449Z
+  容器: 無 | force=false
+  原因: namespace/postgres:16 符合 '^(?!qa-case-)'; postgres:16 符合 '^(?!qa-case-)'; postgres:160 符合 '^(?!qa-case-)'
+  目標: 無
+移除最後一個 tag 可能刪除 image；force 不會停止或刪除容器，且不保證成功。
+輸入 DELETE 確認執行，其他輸入取消: 跳過 | sha256:0f505234dd2bc03222c85d1a1d57f7e0289991acf2053a263390994558aa0939 | registry.example:5000/team/app:1.2 符合 '^(?!qa-case-)'
+失敗 | sha256:347d82c558c6957bf1bb694257ca91a16a8605c7d1a66f7ae074a83abfb1bf81 | 設定已改變，停止執行；請重新預覽
+
+EXIT=1

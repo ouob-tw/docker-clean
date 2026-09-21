@@ -1,0 +1,7 @@
+停止: YAML 錯誤: while parsing a flow node
+expected the node content, but found '<stream end>'
+  in "<byte string>", line 1, column 8:
+    keep: [
+           ^
+
+EXIT=1

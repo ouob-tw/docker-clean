@@ -1,0 +1,144 @@
+remove_tags=True, force=True
+移除 tag | sha256:0b68d0073287b220cb73b3b347a2dd6071fba52b9059b95a3bd566dce5de63b0
+  tags: qa-case-11-running:latest
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:43:05.101912359Z
+  容器: qa-case-11-running (running, a32c2bd3840bb0c825110ab0b38978689787c55ac69c79066eff7e5fd8f17918) | force=true
+  原因: 最後一個 tag 可能同時刪除 image
+  目標: qa-case-11-running:latest
+
+保留 | sha256:0f505234dd2bc03222c85d1a1d57f7e0289991acf2053a263390994558aa0939
+  tags: registry.example:5000/team/app:1.2
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:35:15.124808402Z
+  容器: 無 | force=true
+  原因: registry.example:5000/team/app:1.2 符合 '^(?!qa-case-)'
+  目標: 無
+
+保留 | sha256:4f7a67b0ce2093c28233f60fa807e2f9bf178d9488c94e73501ea450f4584c4a
+  tags: registry.example:5000/team/qa-case-match:1.2
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:40:27.098013662Z
+  容器: 無 | force=true
+  原因: registry.example:5000/team/qa-case-match:1.2 符合 '^(?!qa-case-)'
+  目標: 無
+
+保留 | sha256:5617709a682aaf2892782a41920ef1362a6f206fc934cfd56c8731f052e5e3db
+  tags: qa-running:latest
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:35:17.095585076Z
+  容器: qa-running (running, 72c2f7859ef6ee3cbfed4d2e0861403e7781d598e7f747a3faa3a535b54c5c8d) | force=true
+  原因: qa-running:latest 符合 '^(?!qa-case-)'
+  目標: 無
+
+移除 tag | sha256:602f0b53e7acdbb401c0910e740a91ade861557c25c5a44261ab6808f09bfa60
+  tags: qa-case-11-single:latest
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:43:00.439204126Z
+  容器: 無 | force=true
+  原因: 最後一個 tag 可能同時刪除 image
+  目標: qa-case-11-single:latest
+
+保留 | sha256:6c84bd8e78666adfb28f5d44f94ed16d59c2c7d08a5190da5020eecbfd653dcc
+  tags: qa-overwrite:latest
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:35:21.104575327Z
+  容器: 無 | force=true
+  原因: qa-overwrite:latest 符合 '^(?!qa-case-)'
+  目標: 無
+
+保留 | sha256:75e3c77d7ce8587c0608defc850fd5fcf9a916426d99540d02ee0e1e72526bb6
+  tags: qa-case-change-retarget:latest, qa-replacement:latest
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:39:47.182826529Z
+  容器: 無 | force=true
+  原因: qa-replacement:latest 符合 '^(?!qa-case-)'
+  目標: 無
+
+保留 | sha256:7aa1b3c56f9a1d954d49fa8e8a00d5b75882459f34f40420b01c9fc425770c05
+  tags: qa-stopped:latest
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:35:18.105149463Z
+  容器: qa-stopped (created, 4b7754593f405b298e086cb5b2f2320fa73df46e2538f0f6a63887aabdaa82b6) | force=true
+  原因: qa-stopped:latest 符合 '^(?!qa-case-)'
+  目標: 無
+
+保留 | sha256:7b79fd5d8b4bf20016ffd64fb3c03ca83fc53f3ac4dff4e545b67428bf8a4815
+  tags: app:1x2
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:35:16.096390808Z
+  容器: 無 | force=true
+  原因: app:1x2 符合 '^(?!qa-case-)'
+  目標: 無
+
+保留 | sha256:b9abb5c6afa658671356bc7534cc410ce56af0f074cef69ed632e0f38d518506
+  tags: other/qa-case-match:1.2
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:40:28.095598917Z
+  容器: 無 | force=true
+  原因: other/qa-case-match:1.2 符合 '^(?!qa-case-)'
+  目標: 無
+
+移除 tag | sha256:bf6db45907de806643ff924e771320e66d22c99b3501495a09117ea56ddee037
+  tags: qa-case-11-multi:a, qa-case-11-multi:b
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:43:01.106336226Z
+  容器: 無 | force=true
+  原因: 最後一個 tag 可能同時刪除 image
+  目標: qa-case-11-multi:a, qa-case-11-multi:b
+
+刪除 image | sha256:cdaa0d5163f696015b4e025fe675cfb55edd50831566b3986491595bdc8d1a4c
+  tags: 無 tag
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:43:03.115317633Z
+  容器: 無 | force=true
+  原因: 按完整 ID 刪除
+  目標: sha256:cdaa0d5163f696015b4e025fe675cfb55edd50831566b3986491595bdc8d1a4c
+
+保留 | sha256:db287cb6be81219cd18c1d82b70908f5d33eb028568b456f78eedff2ff2930e4
+  tags: busybox:1.37
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2024-09-26T21:31:42Z
+  容器: 無 | force=true
+  原因: busybox:1.37 符合 '^(?!qa-case-)'
+  目標: 無
+
+保留 | sha256:e5b7a0e25ca9ed4419cb75041b9ea2278cda8aa48148c125c184e3883fb0ffb0
+  tags: qa-case-11-protected:a, qa-case-11-protected:b
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:43:02.118789004Z
+  容器: 無 | force=true
+  原因: qa-case-11-protected:a 符合 '^qa-case-11-protected:a$'
+  目標: 無
+
+移除 tag | sha256:f6b8a965fe350e11e7ce48d1b3ceb78c277b34095d8b670033112250b74c4abf
+  tags: qa-case-11-overwrite:latest
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:43:04.0933591Z
+  容器: 無 | force=true
+  原因: 最後一個 tag 可能同時刪除 image
+  目標: qa-case-11-overwrite:latest
+
+移除 tag | sha256:f808389e89457be81e68e58c952697a476223b9c734c1a1886b32b8b0d164079
+  tags: qa-case-11-stopped:latest
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:43:06.097924268Z
+  容器: qa-case-11-stopped (exited, 9065e3d828b4c77cbb9c8ffe345389b9dcf75a2a8a0b6b4e1c1307294a9dfd91) | force=true
+  原因: 最後一個 tag 可能同時刪除 image
+  目標: qa-case-11-stopped:latest
+
+保留 | sha256:f945fc376e563e944cae978299d8713cb424b29d706df04c59000116a2ae8c43
+  tags: namespace/postgres:16, postgres:16, postgres:160
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:35:14.978119449Z
+  容器: 無 | force=true
+  原因: namespace/postgres:16 符合 '^(?!qa-case-)'; postgres:16 符合 '^(?!qa-case-)'; postgres:160 符合 '^(?!qa-case-)'
+  目標: 無
+移除最後一個 tag 可能刪除 image；force 不會停止或刪除容器，且不保證成功。
+輸入 DELETE 確認執行，其他輸入取消: 移除 tag | qa-case-11-running:latest | Untagged: qa-case-11-running:latest
+跳過 | sha256:0f505234dd2bc03222c85d1a1d57f7e0289991acf2053a263390994558aa0939 | registry.example:5000/team/app:1.2 符合 '^(?!qa-case-)'
+跳過 | sha256:4f7a67b0ce2093c28233f60fa807e2f9bf178d9488c94e73501ea450f4584c4a | registry.example:5000/team/qa-case-match:1.2 符合 '^(?!qa-case-)'
+跳過 | sha256:5617709a682aaf2892782a41920ef1362a6f206fc934cfd56c8731f052e5e3db | qa-running:latest 符合 '^(?!qa-case-)'
+移除 tag | qa-case-11-single:latest | Untagged: qa-case-11-single:latest
+刪除 image | qa-case-11-single:latest | Deleted: sha256:602f0b53e7acdbb401c0910e740a91ade861557c25c5a44261ab6808f09bfa60
+跳過 | sha256:6c84bd8e78666adfb28f5d44f94ed16d59c2c7d08a5190da5020eecbfd653dcc | qa-overwrite:latest 符合 '^(?!qa-case-)'
+跳過 | sha256:75e3c77d7ce8587c0608defc850fd5fcf9a916426d99540d02ee0e1e72526bb6 | qa-replacement:latest 符合 '^(?!qa-case-)'
+跳過 | sha256:7aa1b3c56f9a1d954d49fa8e8a00d5b75882459f34f40420b01c9fc425770c05 | qa-stopped:latest 符合 '^(?!qa-case-)'
+跳過 | sha256:7b79fd5d8b4bf20016ffd64fb3c03ca83fc53f3ac4dff4e545b67428bf8a4815 | app:1x2 符合 '^(?!qa-case-)'
+跳過 | sha256:b9abb5c6afa658671356bc7534cc410ce56af0f074cef69ed632e0f38d518506 | other/qa-case-match:1.2 符合 '^(?!qa-case-)'
+移除 tag | qa-case-11-multi:a | Untagged: qa-case-11-multi:a
+移除 tag | qa-case-11-multi:b | Untagged: qa-case-11-multi:b
+刪除 image | qa-case-11-multi:b | Deleted: sha256:bf6db45907de806643ff924e771320e66d22c99b3501495a09117ea56ddee037
+刪除 image | sha256:cdaa0d5163f696015b4e025fe675cfb55edd50831566b3986491595bdc8d1a4c | Deleted: sha256:cdaa0d5163f696015b4e025fe675cfb55edd50831566b3986491595bdc8d1a4c
+跳過 | sha256:db287cb6be81219cd18c1d82b70908f5d33eb028568b456f78eedff2ff2930e4 | busybox:1.37 符合 '^(?!qa-case-)'
+跳過 | sha256:e5b7a0e25ca9ed4419cb75041b9ea2278cda8aa48148c125c184e3883fb0ffb0 | qa-case-11-protected:a 符合 '^qa-case-11-protected:a$'
+移除 tag | qa-case-11-overwrite:latest | Untagged: qa-case-11-overwrite:latest
+刪除 image | qa-case-11-overwrite:latest | Deleted: sha256:f6b8a965fe350e11e7ce48d1b3ceb78c277b34095d8b670033112250b74c4abf
+移除 tag | qa-case-11-stopped:latest | Untagged: qa-case-11-stopped:latest
+刪除 image | qa-case-11-stopped:latest | Deleted: sha256:f808389e89457be81e68e58c952697a476223b9c734c1a1886b32b8b0d164079
+跳過 | sha256:f945fc376e563e944cae978299d8713cb424b29d706df04c59000116a2ae8c43 | namespace/postgres:16 符合 '^(?!qa-case-)'; postgres:16 符合 '^(?!qa-case-)'; postgres:160 符合 '^(?!qa-case-)'
+
+EXIT=0

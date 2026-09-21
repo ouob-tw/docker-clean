@@ -1,0 +1,3 @@
+停止: Cannot connect to the Docker daemon at unix:///tmp/docker-clean-qa-toga-20260921/absent.sock. Is the docker daemon running?
+
+EXIT=1

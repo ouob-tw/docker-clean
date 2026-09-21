@@ -1,0 +1,34 @@
+[
+  {
+    "case": "A04-invalid-configs",
+    "status": "PASS"
+  },
+  {
+    "case": "A03-A05-A06-A09-A10-A11-mode-False-False",
+    "status": "PASS"
+  },
+  {
+    "case": "A03-A05-A06-A09-A10-A11-mode-False-True",
+    "status": "PASS"
+  },
+  {
+    "case": "A03-A05-A06-A09-A10-A11-mode-True-False",
+    "status": "PASS"
+  },
+  {
+    "case": "A03-A05-A06-A09-A10-A11-mode-True-True",
+    "status": "PASS"
+  },
+  {
+    "case": "A07-cancel-zero-empty",
+    "status": "PASS"
+  },
+  {
+    "case": "A09-A12-connections",
+    "status": "PASS"
+  },
+  {
+    "case": "A11-nonimage",
+    "status": "PASS"
+  }
+]

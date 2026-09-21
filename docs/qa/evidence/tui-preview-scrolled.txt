@@ -1,0 +1,65 @@
+ ⭘                                                                                           Docker Clean
+ 請查看下方完整預覽再確認。最後 tag 可能刪除 image；force 不保證成功。
+
+
+ remove_tags=True, force=True
+ 保留 | sha256:0f505234dd2bc03222c85d1a1d57f7e0289991acf2053a263390994558aa0939
+   tags: registry.example:5000/team/app:1.2
+   大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:35:15.124808402Z
+   容器: 無 | force=true
+   原因: registry.example:5000/team/app:1.2 符合 '^registry\\.example:5000/team/app:1\\.2$'
+   目標: 無
+
+ 移除 tag | sha256:2c1724bfe9d4af166675b2fdab2b2bc17f34c735230c094e49b6d6f20c52ca46
+   tags: qa-case-match:1x2
+   大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:40:25.100494173Z
+   容器: 無 | force=true
+   原因: 最後一個 tag 可能同時刪除 image
+   目標: qa-case-match:1x2
+
+ 移除 tag | sha256:4f7a67b0ce2093c28233f60fa807e2f9bf178d9488c94e73501ea450f4584c4a
+   tags: registry.example:5000/team/qa-case-match:1.2
+   大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:40:27.098013662Z
+   容器: 無 | force=true
+   原因: 最後一個 tag 可能同時刪除 image
+   目標: registry.example:5000/team/qa-case-match:1.2
+
+ 保留 | sha256:5617709a682aaf2892782a41920ef1362a6f206fc934cfd56c8731f052e5e3db
+   tags: qa-running:latest
+   大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:35:17.095585076Z
+   容器: qa-running (running, 72c2f7859ef6ee3cbfed4d2e0861403e7781d598e7f747a3faa3a535b54c5c8d) | force=true
+   原因: qa-running:latest 符合 '^qa\\-running:latest$'
+   目標: 無
+
+ 移除 tag | sha256:68dd8da4630ff445fef4968af86f08116c31edd776356ae3f8f043df872ed07d
+   tags: qa-case-match:1.20
+   大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:40:26.098122012Z
+   容器: 無 | force=true
+   原因: 最後一個 tag 可能同時刪除 image
+   目標: qa-case-match:1.20
+
+ 移除 tag | sha256:6c84bd8e78666adfb28f5d44f94ed16d59c2c7d08a5190da5020eecbfd653dcc
+   tags: qa-overwrite:latest
+   大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:35:21.104575327Z
+   容器: 無 | force=true
+   原因: 最後一個 tag 可能同時刪除 image
+   目標: qa-overwrite:latest
+
+ 移除 tag | sha256:75e3c77d7ce8587c0608defc850fd5fcf9a916426d99540d02ee0e1e72526bb6                                                                                                                   ▁▁
+   tags: qa-case-change-retarget:latest, qa-replacement:latest
+   大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:39:47.182826529Z
+   容器: 無 | force=true
+   原因: 最後一個 tag 可能同時刪除 image
+   目標: qa-case-change-retarget:latest, qa-replacement:latest
+
+ 移除 tag | sha256:7aa1b3c56f9a1d954d49fa8e8a00d5b75882459f34f40420b01c9fc425770c05
+   tags: qa-stopped:latest
+   大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:35:18.105149463Z
+   容器: qa-stopped (created, 4b7754593f405b298e086cb5b2f2320fa73df46e2538f0f6a63887aabdaa82b6) | force=true
+   原因: 最後一個 tag 可能同時刪除 image
+   目標: qa-stopped:latest
+
+ 移除 tag | sha256:7b79fd5d8b4bf20016ffd64fb3c03ca83fc53f3ac4dff4e545b67428bf8a4815
+   tags: app:1x2
+   大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:35:16.096390808Z
+ ^q 離開                                                                                                                                                                                    ▏^p palette

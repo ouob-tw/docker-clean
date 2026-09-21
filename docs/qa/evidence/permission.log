@@ -1,0 +1,3 @@
+停止: permission denied while trying to connect to the Docker daemon socket at unix:///tmp/docker-clean-qa-toga-20260921/socket/docker.sock: Head "http://%2Ftmp%2Fdocker-clean-qa-toga-20260921%2Fsocket%2Fdocker.sock/_ping": dial unix /tmp/docker-clean-qa-toga-20260921/socket/docker.sock: connect: permission denied
+
+EXIT=1

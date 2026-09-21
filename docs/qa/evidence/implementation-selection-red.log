@@ -1,0 +1,106 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_preview_reconciles_selection_after_external_image_removal ________
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-799/test_preview_reconciles_select0')
+
+    async def test_preview_reconciles_selection_after_external_image_removal(tmp_path):
+        docker = DockerFixture()
+        app = CleanerApp(tmp_path / "config.yaml", docker)
+        async with app.run_test(size=(140, 60)) as pilot:
+            await pilot.click("#save")
+            app.query_one(DataTable).focus()
+            await pilot.press("enter")
+            assert app.selected
+            docker.snapshot = lambda: {}
+            await pilot.click("#preview")
+            await pilot.click("#select")
+>           assert app.selected == set()
+E           AssertionError: assert {'sha256:aaaa...aaaaaaaaaaaa'} == set()
+E
+E             Extra items in the left set:
+E             'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+E             Use -v to get more diff
+
+tests/integration/test_tui.py:75: AssertionError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-799/test_preview_reconciles_select0')
+
+    async def test_preview_reconciles_selection_after_external_image_removal(tmp_path):
+        docker = DockerFixture()
+        app = CleanerApp(tmp_path / "config.yaml", docker)
+>       async with app.run_test(size=(140, 60)) as pilot:
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/integration/test_tui.py:67:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+../.local/share/uv/python/cpython-3.13.3-linux-x86_64-gnu/lib/python3.13/contextlib.py:235: in __aexit__
+    await self.gen.athrow(value)
+.venv/lib/python3.13/site-packages/textual/app.py:2218: in run_test
+    raise self._exception
+.venv/lib/python3.13/site-packages/textual/message_pump.py:663: in _process_messages_loop
+    await self._dispatch_message(message)
+.venv/lib/python3.13/site-packages/textual/message_pump.py:739: in _dispatch_message
+    await self._on_message(message)
+.venv/lib/python3.13/site-packages/textual/message_pump.py:829: in _on_message
+    await invoke(method, message)
+.venv/lib/python3.13/site-packages/textual/_callback.py:96: in invoke
+    return await _invoke(callback, *params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.13/site-packages/textual/_callback.py:56: in _invoke
+    result = callback(*params[:parameter_count])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = CleanerApp(title='Docker Clean', classes={'-dark-mode'}, pseudo_classes={'dark', 'nocolor', 'focus'})
+event = Pressed()
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        try:
+            action = event.button.id
+            if action == "reload":
+                self.reload()
+            elif action == "refresh":
+                self.refresh_images()
+            elif action == "cancel":
+                self.invalidate()
+                self.message("已取消；未修改 Docker")
+            elif action == "select":
+                rules = list(self.current().keep)
+                for image_id in sorted(self.selected):
+>                   for tag in self.images[image_id].tags:
+                               ^^^^^^^^^^^^^^^^^^^^^
+E                   KeyError: 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+
+src/docker_clean/tui.py:153: KeyError
+----------------------------- Captured stderr call -----------------------------
+╭───────────────────── Traceback (most recent call last) ──────────────────────╮
+│ /home/swy/docker-clean/src/docker_clean/tui.py:153 in on_button_pressed      │
+│                                                                              │
+│   150 │   │   │   elif action == "select":                                   │
+│   151 │   │   │   │   rules = list(self.current().keep)                      │
+│   152 │   │   │   │   for image_id in sorted(self.selected):                 │
+│ ❱ 153 │   │   │   │   │   for tag in self.images[image_id].tags:             │
+│   154 │   │   │   │   │   │   pattern = "^" + re.escape(tag) + "$"           │
+│   155 │   │   │   │   │   │   if pattern not in rules:                       │
+│   156 │   │   │   │   │   │   │   rules.append(pattern)                      │
+│                                                                              │
+│ ╭───────────────────────────────── locals ─────────────────────────────────╮ │
+│ │   action = 'select'                                                      │ │
+│ │    event = Pressed()                                                     │ │
+│ │ image_id = 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa… │ │
+│ │    rules = []                                                            │ │
+│ │     self = CleanerApp(                                                   │ │
+│ │            │   title='Docker Clean',                                     │ │
+│ │            │   classes={'-dark-mode'},                                   │ │
+│ │            │   pseudo_classes={'dark', 'nocolor', 'focus'}               │ │
+│ │            )                                                             │ │
+│ ╰──────────────────────────────────────────────────────────────────────────╯ │
+╰──────────────────────────────────────────────────────────────────────────────╯
+KeyError:
+'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+=========================== short test summary info ============================
+FAILED tests/integration/test_tui.py::test_preview_reconciles_selection_after_external_image_removal
+1 failed in 1.05s

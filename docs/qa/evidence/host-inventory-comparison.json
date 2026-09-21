@@ -1,0 +1,16 @@
+{
+  "containers": {
+    "before": 139,
+    "after": 139,
+    "missing_original_ids": [],
+    "new_ids": []
+  },
+  "images": {
+    "before": 406,
+    "after": 407,
+    "missing_original_ids": [],
+    "new_ids": [
+      "sha256:6a68f64cf32d98b09a11c208de78f59f17c0a6fff33c13f11acac853d6aad5ae"
+    ]
+  }
+}

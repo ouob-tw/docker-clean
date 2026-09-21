@@ -1,0 +1,3 @@
+停止: 僅支援本機 Unix socket；拒絕遠端或不明連線: ssh://example.invalid
+
+EXIT=1

@@ -1,0 +1,18 @@
+[
+  {
+    "case": "A08-config",
+    "status": "PASS"
+  },
+  {
+    "case": "A08-retarget",
+    "status": "PASS"
+  },
+  {
+    "case": "A08-protected",
+    "status": "PASS"
+  },
+  {
+    "case": "A08-reference",
+    "status": "PASS"
+  }
+]

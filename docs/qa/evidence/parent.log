@@ -1,0 +1,11 @@
+remove_tags=False, force=True
+警告：沒有保留規則 (keep: [])
+刪除 image | sha256:116c65e0981fdd0a7adb82c85b7f6c6d0929df664f6e71ea70ae050d2f31bdf4
+  tags: qa-child:latest, qa-parent:latest
+  大小: 4421246 bytes（共用層不可加總） | 建立: 2026-09-21T07:41:42.054512538Z
+  容器: 無 | force=true
+  原因: 按完整 ID 刪除
+  目標: sha256:116c65e0981fdd0a7adb82c85b7f6c6d0929df664f6e71ea70ae050d2f31bdf4
+移除 tag | sha256:116c65e0981fdd0a7adb82c85b7f6c6d0929df664f6e71ea70ae050d2f31bdf4 | Untagged: qa-child:latest
+移除 tag | sha256:116c65e0981fdd0a7adb82c85b7f6c6d0929df664f6e71ea70ae050d2f31bdf4 | Untagged: qa-parent:latest
+刪除 image | sha256:116c65e0981fdd0a7adb82c85b7f6c6d0929df664f6e71ea70ae050d2f31bdf4 | Deleted: sha256:116c65e0981fdd0a7adb82c85b7f6c6d0929df664f6e71ea70ae050d2f31bdf4
