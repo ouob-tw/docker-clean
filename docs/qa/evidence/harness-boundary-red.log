@@ -1,0 +1,22 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_exists_does_not_treat_permission_denied_as_missing ____________
+
+harness = <module 'run_cli' from '/home/swy/docker-clean/tests/qa_e2e/run_cli.py'>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fdf51b4d6e0>
+
+    def test_exists_does_not_treat_permission_denied_as_missing(harness, monkeypatch):
+        def denied(args, **kwargs):
+            if kwargs.get('check'):
+                raise subprocess.CalledProcessError(1, args, stderr='permission denied')
+            return subprocess.CompletedProcess(args, 1, stdout='', stderr='permission denied')
+
+        monkeypatch.setattr(subprocess, 'run', denied)
+>       with pytest.raises(subprocess.CalledProcessError, match='returned non-zero'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE CalledProcessError
+
+tests/unit/test_qa_harness.py:22: Failed
+=========================== short test summary info ============================
+FAILED tests/unit/test_qa_harness.py::test_exists_does_not_treat_permission_denied_as_missing
+1 failed in 0.01s

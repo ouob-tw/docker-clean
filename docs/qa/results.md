@@ -65,3 +65,13 @@ uv run python tests/qa_e2e/run_terminal.py
 - 專用 DinD 容器與其 tmpfs 內所有 fixtures 已移除；沒有其他主機 container ID 消失。所有 QA tmux 終端皆已退出。
 - 原主機 container ID 集合 139→139 完全相同；原 image 406 個全保留，新增 1 個共享 `docker:28-dind` base 並依約保留。詳見 `evidence/host-inventory-comparison.json`。此盤點只證明 ID 保留，不宣稱主機其他服務的所有執行狀態完全未變。
 - QA 臨時目錄 `/tmp/docker-clean-qa-toga-20260921` 與自產生 pycache 已用 trash-cli 清理；必要證據已保存在本資料夾。未知來源的 `.env`、`.serena/` 完全未讀取內容或修改。
+
+## QA harness 複查修正（保留原驗收紀錄）
+
+最終 harness 複查在 `6097448` 找到兩個 P2：權限測試的 host `docker exec chmod` 未固定 endpoint；`exists()` 把所有 inspect 失敗都當作不存在，可能將權限或連線錯誤誤判為刪除成功。
+
+本次只修正 QA 工具：管理命令統一經清除繼承 Docker context／TLS 設定的 `host_docker()`，固定 `unix:///var/run/docker.sock`；setup／cleanup 範例亦明列 endpoint。`exists()` 改為要求成功取得完整 image inventory，再比對完整 ID 或 repository:tag；查詢錯誤直接拋出，不回傳不存在，無 tag 亦不虛構名稱。
+
+- RED：在 `6097448` 的舊 harness，模擬 subprocess 權限拒絕後應拋出錯誤的測試，實際因 `DID NOT RAISE CalledProcessError` 失敗。見 `evidence/harness-boundary-red.log`。
+- GREEN：修正後 `uv run pytest tests/unit/test_qa_harness.py -q`，7 passed。另涵蓋成功 inventory 的 ID／registry port tag／無 tag／缺少目標，以及管理命令不繼承 remote context。見 `evidence/harness-boundary-green.log`。
+- 此處使用 mock subprocess，是 harness 邊界單元測試，**不是新增 Docker E2E 證據**。修正後再次建立 daemon、重跑破壞性驗收為 **NOT_EXECUTED**；原有真實執行證據維持原版本，不回寫或冒充本次修正版執行。原紀錄未觀察到連線錯誤被誤判為刪除成功；完整 container equality、成功 Docker 原生結果與既有 image 保留檢查仍是原執行的獨立證據。

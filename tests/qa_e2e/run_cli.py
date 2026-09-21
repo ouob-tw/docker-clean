@@ -6,7 +6,7 @@ from pathlib import Path
 import subprocess
 import sys
 
-from engine import QA_ROOT, SOCKET, containers, docker, guard, image
+from engine import CONTAINER_NAME, QA_ROOT, SOCKET, containers, docker, guard, host_docker, image
 
 ROOT = Path(__file__).resolve().parents[2]
 ENV = {**os.environ, 'DOCKER_HOST': f'unix://{SOCKET}'}
@@ -30,7 +30,12 @@ def cli(name, path, answer='DELETE\n', env=None):
 
 
 def exists(target):
-    return docker('image', 'inspect', target, check=False).returncode == 0
+    output = docker('image', 'ls', '--all', '--no-trunc', '--format', '{{json .}}').stdout
+    images = [json.loads(line) for line in output.splitlines()]
+    return any(item['ID'] == target or (
+        item['Repository'] != '<none>' and item['Tag'] != '<none>'
+        and item['Repository'] + ':' + item['Tag'] == target
+    ) for item in images)
 
 
 def record(name, function):
@@ -118,12 +123,12 @@ def connection_errors():
         assert result.returncode != 0 and '停止' in result.stdout
         if name != 'absent-socket':
             assert '拒絕遠端' in result.stdout
-    subprocess.run(['docker', 'exec', 'docker-clean-qa-toga-20260921', 'chmod', '000', '/qa-socket/docker.sock'], check=True)
+    host_docker('exec', CONTAINER_NAME, 'chmod', '000', '/qa-socket/docker.sock')
     try:
         result = cli('permission', path)
         assert result.returncode != 0 and 'permission denied' in result.stdout.lower()
     finally:
-        subprocess.run(['docker', 'exec', 'docker-clean-qa-toga-20260921', 'chmod', '666', '/qa-socket/docker.sock'], check=True)
+        host_docker('exec', CONTAINER_NAME, 'chmod', '666', '/qa-socket/docker.sock')
 
 
 if __name__ == '__main__':

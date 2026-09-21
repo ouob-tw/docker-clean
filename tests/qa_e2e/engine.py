@@ -20,14 +20,20 @@ def docker(*args: str, check: bool = True, input: str | None = None):
     )
 
 
+def host_docker(*args: str):
+    """Manage only the owned DinD container on the explicitly pinned host daemon."""
+    env = {key: value for key, value in os.environ.items() if key not in {
+        'DOCKER_HOST', 'DOCKER_CONTEXT', 'DOCKER_TLS', 'DOCKER_TLS_VERIFY', 'DOCKER_CERT_PATH'}}
+    return subprocess.run(
+        ['docker', '--host', 'unix:///var/run/docker.sock', *args],
+        text=True, capture_output=True, check=True, env=env,
+    )
+
+
 def guard():
     assert str(SOCKET).startswith('/tmp/docker-clean-qa-toga-20260921/')
     name = docker('info', '--format', '{{.Name}}').stdout.strip()
-    expected = subprocess.run(
-        ['docker', '--host', 'unix:///var/run/docker.sock', 'inspect',
-         '--format', '{{.Config.Hostname}}', CONTAINER_NAME],
-        text=True, capture_output=True, check=True,
-    ).stdout.strip()
+    expected = host_docker('inspect', '--format', '{{.Config.Hostname}}', CONTAINER_NAME).stdout.strip()
     assert name == expected, f'Refuse unrecognized daemon: {name}'
 
 
