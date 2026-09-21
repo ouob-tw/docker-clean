@@ -21,3 +21,5 @@
 根 agent 另回報：舊版 `7a58116` 的游標測試曾失敗（預期 15，實際 0），`f4f27f3` 的 NO_COLOR 真實 PTY 測試重現黑底黑字失敗；紅燈紀錄已保存為 `cursor-red.log`、`no-color-red.log`。最終 `ed4cc85` 共 63 項測試通過（6.46 秒）、mypy 6 檔通過。此段為根 agent 的獨立測試結果，非本終端 QA 重新執行。
 
 清理：Ctrl+Q 結束自身 tmux session，確認 session 已不存在；暫存 YAML 以 trash-cli 移除。保留上述證據檔；未修改 production code、使用者設定或 Docker 資源。
+
+主控整合核對：Standards／Spec 獨立審查皆完成；發現的 QA focus helper 點擊資料列造成額外勾選已在 `f4f27f3` 修正並獨立重驗。原生色初始化修正 `ed4cc85` 亦經獨立審查通過。主控確認相關 tmux session 已退出，自己的驗收暫存資料已清理；沒有未處理的本次審查項目。
