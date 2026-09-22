@@ -43,7 +43,7 @@ def main() -> int:
             print("已取消；未修改 Docker")
             return 0
         results = execute(preview, args.config, docker)
-        print(render_results(results))
+        print(render_results(results, (entry.image for entry in preview.entries)))
         return 1 if any(result.status == "失敗" for result in results) else 0
     except (CleanError, KeyboardInterrupt) as exc:
         print(f"停止: {exc}")

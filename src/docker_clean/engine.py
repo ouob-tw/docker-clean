@@ -83,3 +83,6 @@ class Docker:
         if force:
             args.append("--force")
         return self.call(*args, target)
+
+    def forceDeleteImage(self, image_id: str) -> str:
+        return self.remove(image_id, force=True)

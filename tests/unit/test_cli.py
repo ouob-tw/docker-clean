@@ -35,7 +35,10 @@ def test_public_clean_preview_confirmation_results(tmp_path, monkeypatch, capsys
     text = capsys.readouterr().out
     assert "沒有保留規則" in text and "sha256:" + "b" * 64 in text
     assert len(FakeDocker.calls) == (1 if answer == "DELETE" else 0)
-    assert ("失敗" in text) == failure
+    if answer == "DELETE":
+        assert f"失敗 {int(failure)}" in text
+    else:
+        assert "失敗" not in text
 
 
 def test_missing_config_never_connects(tmp_path, monkeypatch, capsys):
