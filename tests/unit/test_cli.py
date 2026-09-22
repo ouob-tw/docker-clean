@@ -46,3 +46,12 @@ def test_missing_config_never_connects(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(cli, "Docker", lambda: pytest.fail("must not connect"))
     assert cli.main() == 1
     assert "設定不存在" in capsys.readouterr().out
+
+
+def test_whitelist_entry_does_not_require_legacy_config(tmp_path, monkeypatch):
+    from docker_clean.whitelist import WhitelistApp
+    calls = []
+    monkeypatch.setattr(sys, "argv", ["docker-clean", "whitelist", "--config", str(tmp_path / "absent")])
+    monkeypatch.setattr(WhitelistApp, "run", lambda self: calls.append("run"))
+    assert cli.main() == 0
+    assert calls == ["run"]

@@ -34,8 +34,10 @@ class Probe(tui.CleanerApp):
         super().on_mount()
         self.set_interval(0.05, self.report)
     def report(self):
+        table = self.query_one(tui.ImageTable)
         Path(sys.argv[-1] + ".state").write_text(json.dumps({
-            "selected": sorted(self.selected), "screens": [type(s).__name__ for s in self.screen_stack]}))
+            "selected": sorted(self.selected), "screens": [type(s).__name__ for s in self.screen_stack],
+            "cell": [table.region.x + 3, table.region.y + 2]}))
 tui.CleanerApp = Probe
 raise SystemExit(cli.main())
 '''
@@ -69,7 +71,11 @@ raise SystemExit(cli.main())
                 resized = True
             if not clicked and b"example:1" in output and state.exists() and replied:
                 # HERDR 0.9.0 can send cell SGR even after a child requests 1016.
-                os.write(master, b"\x1b[<0;3;13M\x1b[<0;3;13m")
+                try:
+                    x, y = json.loads(state.read_text())["cell"]
+                except json.JSONDecodeError:
+                    continue
+                os.write(master, f"\x1b[<0;{x};{y}M\x1b[<0;{x};{y}m".encode())
                 clicked = True
             if state.exists():
                 try:

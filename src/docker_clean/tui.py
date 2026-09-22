@@ -2,22 +2,50 @@ from pathlib import Path
 import re
 from datetime import datetime
 from dataclasses import replace
+from collections.abc import Sequence
 
 from rich.text import Text
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
+from textual.filter import LineFilter, NoColor
 from textual.theme import BUILTIN_THEMES, Theme
-from textual.containers import Horizontal, VerticalScroll
-from textual.widgets import Button, Checkbox, DataTable, Footer, Header, Static, TextArea
+from textual.containers import Horizontal, Vertical
+from textual.widgets import Checkbox, DataTable, Footer, Static, TextArea
 
 from .config import CleanError, Config, load, save
 from .engine import Docker, Image
-from .plan import Preview, execute, plan, render, render_results
+from .dialogs import HelpScreen
+from .plan import Preview, ProgressCallback, Result, execute, plan, render
+from .progress import CleanupProgress
+from .scrolling import ContainedTextArea, ContainedVerticalScroll, ScrollContainment
+from .themes import E_INK_CSS, E_INK_THEME
+from .widgets import ActionButton as Button, AppHeader
 
 
-class ImageTable(DataTable):
+class ImageTable(ScrollContainment, DataTable):
     BINDINGS = [Binding("space", "select_cursor", "選取", show=False)]
+    sort_column = "tags"
+    sort_reverse = False
+
+    def toggle_sort(self, column: str) -> None:
+        self.sort_reverse = not self.sort_reverse if column == self.sort_column else False
+        self.sort_column = column
+
+    def column_label(self, label: str, key: str) -> str:
+        if key != self.sort_column:
+            return label
+        return label + ("" if key == "selected" else " ") + ("▼" if self.sort_reverse else "▲")
+
+    def image_sort_key(self, image: Image, selected: set[str], reason: str = "") -> tuple:
+        values = {
+            "tags": tuple(tag.casefold() for tag in sorted(image.tags)) or ("\uffff",),
+            "size": image.size,
+            "created": datetime.fromisoformat(image.created.replace("Z", "+00:00")).timestamp(),
+            "selected": image.id in selected,
+            "reason": reason,
+        }
+        return values[self.sort_column], image.id
 
 
 def readable_size(size: int) -> str:
@@ -36,8 +64,14 @@ def readable_date(value: str) -> str:
 class CleanerApp(App):
     TITLE = "Docker Clean"
     CSS = """
+    Screen { overflow: hidden; }
     #rules { height: 6; }
-    #images { height: 12; }
+    #images { height: 1fr; }
+    #preview-details { height: 1fr; display: none; }
+    .previewing #images { display: none; }
+    .previewing #preview-details { display: block; }
+    #bottom-bar { dock: bottom; height: auto; }
+    Footer { dock: none; width: 1fr; height: 1; align-horizontal: right; }
     #output { height: auto; padding: 1; }
     Horizontal { height: auto; }
     Checkbox { height: 1; margin-right: 2; }
@@ -49,14 +83,18 @@ class CleanerApp(App):
         padding: 0 1;
         margin-right: 1;
     }
-    #status { height: auto; padding: 1; }
-    """
-    BINDINGS = [("ctrl+q", "quit", "離開"), ("ctrl+t", "change_theme", "主題")]
+    AppHeader #help { margin-right: 0; }
+    #status { height: 1; text-wrap: nowrap; text-overflow: ellipsis; }
+    """ + E_INK_CSS
+    BINDINGS = [Binding("ctrl+q", "quit", "離開"),
+                Binding("ctrl+p", "command_palette", "命令選單"),
+                Binding("ctrl+t", "change_theme", "主題", show=False)]
 
     def __init__(self, path: Path, docker: Docker | None = None) -> None:
         # Choose the native-color NO_COLOR filter before registering our theme.
         super().__init__(ansi_color=True)
         self.register_theme(replace(BUILTIN_THEMES["ansi-dark"], name="terminal"))
+        self.register_theme(E_INK_THEME)
         self.theme = "terminal"
         self.ansi_color = None
         self.path = path
@@ -67,30 +105,37 @@ class CleanerApp(App):
         self.preview: Preview | None = None
         self.loaded = False
         self.saved_config = Config()
+        self.cleanup = CleanupProgress()
+
+    def get_line_filters(self) -> Sequence[LineFilter]:
+        filters = super().get_line_filters()
+        if self.theme == "e-ink":
+            # E-Ink is already monochrome; preserve its explicit black/white contrast.
+            return [filter for filter in filters if not isinstance(filter, NoColor)]
+        return filters
 
     def compose(self) -> ComposeResult:
-        yield Header()
-        with VerticalScroll():
-            yield Static("Regex 保留規則：每行一條，可直接新增、修改或刪除；搜尋匹配。")
-            yield TextArea(id="rules")
-            with Horizontal():
-                yield Checkbox("逐一移除標籤", id="remove-tags", compact=True,
-                               tooltip="逐一移除待清理 image 的所有 tag；最後一個標籤移除時，可能一併刪除 image。")
-                yield Checkbox("強制刪除 image", id="force", compact=True)
-            with Horizontal():
-                yield Button("儲存", id="save")
-                yield Button("重新載入", id="reload")
-                yield Button("重新盤點", id="refresh")
-            yield Static("Space／Enter／點擊勾選，再按「產生規則」。完整 ID 與容器引用見下方預覽。")
-            yield ImageTable(id="images", cursor_type="row")
+        yield AppHeader()
+        yield ContainedTextArea(id="rules")
+        with Horizontal():
+            yield Checkbox("逐一移除標籤", id="remove-tags", compact=True,
+                           tooltip="逐一移除待清理 image 的所有 tag；最後一個標籤移除時，可能一併刪除 image。")
+            yield Checkbox("強制刪除 image", id="force", compact=True)
+        with Horizontal():
+            yield Button("儲存", id="save")
+            yield Button("重新載入", id="reload")
+            yield Button("刷新", id="refresh")
+        yield ImageTable(id="images", cursor_type="row")
+        with ContainedVerticalScroll(id="preview-details"):
+            yield Static("", id="output", markup=False)
+        with Vertical(id="bottom-bar"):
+            yield Static("", id="status", markup=False)
             with Horizontal():
                 yield Button("產生規則", id="select")
                 yield Button("預覽", id="preview")
                 yield Button("確認刪除", id="confirm", variant="error", disabled=True)
                 yield Button("取消", id="cancel")
-            yield Static("", id="status", markup=False)
-            yield Static("", id="output", markup=False)
-        yield Footer()
+                yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
         self.reload()
@@ -98,10 +143,24 @@ class CleanerApp(App):
         self.theme_changed_signal.subscribe(self, self.persist_theme)
 
     def on_resize(self) -> None:
-        if self.query("#images"):
-            self.call_after_refresh(self.update_table)
+        if self.query("#images") and not self.cleanup.running:
+            self.call_after_refresh(self.redraw_table)
+
+    async def action_quit(self) -> None:
+        if self.cleanup.running:
+            self.message("刪除正在執行；請等待結果後離開。")
+        else:
+            self.exit()
+
+    def action_change_theme(self) -> None:
+        if self.cleanup.running:
+            self.message("刪除正在執行；請等待結果後切換主題。")
+        else:
+            super().action_change_theme()
 
     def persist_theme(self, theme: Theme) -> None:
+        if self.cleanup.running:
+            return
         if not self.loaded or theme.name != self.theme or theme.name == self.saved_config.theme:
             return
         self.invalidate()
@@ -131,6 +190,7 @@ class CleanerApp(App):
 
     def invalidate(self) -> None:
         self.preview = None
+        self.remove_class("previewing")
         self.query_one("#confirm", Button).disabled = True
 
     def reload(self) -> None:
@@ -170,7 +230,7 @@ class CleanerApp(App):
         except CleanError as exc:
             self.message(str(exc))
             return
-        table = self.query_one(DataTable)
+        table = self.query_one(ImageTable)
         cursor_row = table.cursor_row
         cursor_key = (table.coordinate_to_cell_key(table.cursor_coordinate).row_key.value
                       if table.row_count else None)
@@ -181,8 +241,10 @@ class CleanerApp(App):
         for label, key, width in (("選", "selected", 3), ("tag", "tags", tag_width),
                                   ("大小", "size", 9), ("建立日期", "created", 19),
                                   ("動作原因", "reason", available - tag_width)):
-            table.add_column(label, key=key, width=width)
-        for entry in preview.entries:
+            table.add_column(table.column_label(label, key), key=key, width=width)
+        entries = sorted(preview.entries, key=lambda entry: table.image_sort_key(
+            entry.image, self.selected, entry.action + ": " + entry.reason), reverse=table.sort_reverse)
+        for entry in entries:
             image = entry.image
             table.add_row("✓" if image.id in self.selected else "□",
                           Text("\n".join(image.tags) or "無 tag", overflow="fold"),
@@ -190,19 +252,50 @@ class CleanerApp(App):
                           Text(entry.action + ": " + entry.reason, overflow="fold"),
                           key=image.id, height=None)
         if table.row_count:
-            keys = [entry.image.id for entry in preview.entries]
+            keys = [entry.image.id for entry in entries]
             row = keys.index(cursor_key) if cursor_key in keys else min(cursor_row, table.row_count - 1)
             table.move_cursor(row=row, scroll=False)
             self.call_after_refresh(table.scroll_to, x=offset.x, y=offset.y, animate=False)
         self.query_one("#output", Static).update(render(preview))
 
+    def on_data_table_header_selected(self, event: DataTable.HeaderSelected) -> None:
+        if self.cleanup.running:
+            return
+        try:
+            self.current().validate()
+        except CleanError as exc:
+            self.message(str(exc))
+            return
+        table = self.query_one(ImageTable)
+        table.toggle_sort(str(event.column_key.value))
+        self.redraw_table()
+
+    def redraw_table(self) -> None:
+        preview = self.preview
+        previewing = self.has_class("previewing")
+        output = self.query_one("#output", Static).render()
+        self.update_table()
+        self.preview = preview
+        self.set_class(previewing, "previewing")
+        self.query_one("#output", Static).update(output)
+        self.query_one("#confirm", Button).disabled = not (
+            preview and any(entry.targets for entry in preview.entries))
+
     def on_text_area_changed(self, event: TextArea.Changed) -> None:
+        if self.cleanup.running:
+            return
+        self.query_one("#output", Static).display = True
         self.update_table()
 
     def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
+        if self.cleanup.running:
+            return
+        self.query_one("#output", Static).display = True
         self.update_table()
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
+        if self.cleanup.running:
+            return
         key = str(event.row_key.value)
         if key in self.selected:
             self.selected.remove(key)
@@ -212,9 +305,13 @@ class CleanerApp(App):
         self.query_one(DataTable).update_cell(key, "selected", "✓" if key in self.selected else "□")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        if self.cleanup.running or self.screen.is_modal:
+            return
         try:
             action = event.button.id
-            if action == "reload":
+            if action == "help":
+                self.push_screen(HelpScreen(whitelist=False))
+            elif action == "reload":
                 self.reload()
             elif action == "refresh":
                 self.refresh_images()
@@ -238,6 +335,7 @@ class CleanerApp(App):
                 self.invalidate()
                 self.message("設定已儲存")
             elif action == "preview":
+                self.query_one("#output", Static).display = True
                 config, revision = load(self.path)
                 if config != self.current() or revision != self.revision:
                     raise CleanError("設定尚未儲存或已被外部修改；請儲存／重新載入後預覽")
@@ -247,6 +345,7 @@ class CleanerApp(App):
                 self.images = self.docker.snapshot()
                 self.update_table()
                 self.preview = plan(config, self.images, revision)
+                self.add_class("previewing")
                 self.query_one("#output", Static).update(render(self.preview))
                 has_targets = any(entry.targets for entry in self.preview.entries)
                 self.query_one("#confirm", Button).disabled = not has_targets
@@ -255,10 +354,27 @@ class CleanerApp(App):
             elif action == "confirm" and self.preview is not None:
                 preview = self.preview
                 self.invalidate()
+                self.cleanup = CleanupProgress()
                 assert self.docker is not None
-                results = execute(preview, self.path, self.docker)
-                self.query_one("#output", Static).update(render_results(results))
-                self.message("執行完畢；請查看成功、跳過與失敗結果。容量未加總。")
+                docker = self.docker
+
+                def operation(progress: ProgressCallback) -> list[Result]:
+                    results = execute(preview, self.path, docker, progress)
+                    self.call_from_thread(self.cleanup.show_status, "正在刷新")
+                    images = docker.snapshot()
+                    self.call_from_thread(setattr, self, "images", images)
+                    return results
+
+                def finished(error: str | None) -> None:
+                    self.selected.clear()
+                    if error:
+                        self.images = {}
+                    self.update_table()
+                    self.message(f"執行或盤點失敗：{error}；清單已清空，請刷新。" if error
+                                 else "執行已結束；詳細紀錄由舊到新排列。")
+
+                self.query_one("#output", Static).display = False
+                self.cleanup.start(len(preview.entries), operation, finished)
         except CleanError as exc:
             self.invalidate()
             self.message(str(exc))

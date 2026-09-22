@@ -14,17 +14,23 @@ from .plan import execute, plan, render, render_results
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="本機 Docker image 清理：預覽後確認")
-    parser.add_argument("command", choices=["tui", "clean"])
+    parser.add_argument("command", choices=["whitelist", "tui", "clean"])
     parser.add_argument("--config", type=Path, default=Path.home() / ".config/docker-clean/config.yaml")
     args = parser.parse_args()
     try:
-        if args.command == "tui":
+        if args.command in {"tui", "whitelist"}:
+            from .terminal import use_cell_coordinates
+            use_cell_coordinates()
             if sys.stdout.isatty():
                 # Clear pixel/resize modes a previous TUI may have left enabled.
                 sys.stdout.write("\x1b[?1016l\x1b[?2048l")
                 sys.stdout.flush()
-            from .tui import CleanerApp
-            CleanerApp(args.config).run()
+            if args.command == "whitelist":
+                from .whitelist import WhitelistApp
+                WhitelistApp().run()
+            else:
+                from .tui import CleanerApp
+                CleanerApp(args.config).run()
             return 0
         config, revision = load(args.config)
         assert revision is not None

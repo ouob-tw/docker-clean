@@ -91,14 +91,15 @@ async def test_selection_keeps_cursor_and_scroll_and_accepts_space(tmp_path):
         await pilot.press(*(["down"] * 15))
         await pilot.pause()
         before = table.scroll_offset
+        selected_id = table.ordered_rows[15].key.value
         await pilot.press("enter")
         assert table.cursor_row == 15
         assert table.scroll_offset == before
-        assert list(images)[15] in app.selected
+        assert selected_id in app.selected
         await pilot.press("space")
         assert table.cursor_row == 15
         assert table.scroll_offset == before
-        assert list(images)[15] not in app.selected
+        assert selected_id not in app.selected
         assert not docker.calls
 
 
@@ -112,7 +113,7 @@ async def test_compact_columns_wrap_tags_and_keep_full_id_in_preview(tmp_path):
         await pilot.pause()
         table = app.query_one(DataTable)
         assert [str(column.label) for column in table.ordered_columns] == [
-            "選", "tag", "大小", "建立日期", "動作原因"]
+            "選", "tag ▲", "大小", "建立日期", "動作原因"]
         image = next(iter(docker.snapshot().values()))
         assert table.rows[table.ordered_rows[0].key].height > 1
         assert str(table.get_cell(image.id, "size")) == "1.5 KiB"

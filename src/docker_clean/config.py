@@ -24,8 +24,8 @@ class Config:
             raise CleanError("keep 必須是字串陣列")
         if type(self.remove_tags) is not bool or type(self.force) is not bool:
             raise CleanError("cleanup 選項必須是布林值")
-        if not isinstance(self.theme, str) or self.theme not in {"terminal", *BUILTIN_THEMES}:
-            raise CleanError("theme 必須是 terminal 或有效的內建主題名稱")
+        if not isinstance(self.theme, str) or self.theme not in {"terminal", "e-ink", *BUILTIN_THEMES}:
+            raise CleanError("theme 必須是 terminal、e-ink 或有效的內建主題名稱")
         for pattern in self.keep:
             try:
                 re.compile(pattern)
