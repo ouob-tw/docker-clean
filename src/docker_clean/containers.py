@@ -159,7 +159,7 @@ def run(path: Path, yes: bool, json_output: bool) -> int:
             print("沒有保留規則；所有符合停止期限的非 Swarm 容器均可能刪除。")
         for entry in entries:
             cdata = entry["container"]
-            print(f"{cdata['name']}  {entry['reason']}  {cdata['id']}")
+            print(f"{cdata['name']} | {entry['reason']} | {cdata['id'][:12]}")
             for mount in cdata["mounts"]:
                 print(f'  掛載：{mount}')
         print("刪除會失去容器可寫層；掛載資料與 volume 保留，匿名 volume 不自動重新掛回。")
