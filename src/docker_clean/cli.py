@@ -7,7 +7,7 @@ from pathlib import Path
 # This supported Textual setting must precede imports that load its constants.
 os.environ["TEXTUAL_SMOOTH_SCROLL"] = "0"
 
-from .config import CleanError, load
+from .config import CleanError, load, default_image_config
 from .engine import Docker
 from .plan import execute, plan, render, render_results
 
@@ -16,7 +16,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="本機 Docker image 清理：預覽後確認")
     parser.add_argument("command", choices=["keep", "delete", "clean", "whitelist", "tui"],
                         metavar="{keep,delete,clean}")
-    parser.add_argument("--config", type=Path, default=Path.home() / ".config/docker-clean/config.yaml")
+    parser.add_argument("--config", type=Path, default=default_image_config())
     args = parser.parse_args(argv)
     # Accept previous entrypoints without advertising the ambiguous names.
     args.command = {"whitelist": "delete", "tui": "keep"}.get(args.command, args.command)

@@ -1,6 +1,6 @@
 # Docker Clean
 
-提供 Delete 勾選刪除、Keep 保留規則流程與自動化 CLI。僅清理本機 Docker image／tag，不使用 prune。
+提供 Delete 勾選刪除、Keep 保留規則流程與自動化 CLI。清理本機 Docker image／tag，另提供依停止期限與保留清單清理容器的 CLI；不使用 prune。
 
 ## Image 清理入口
 
@@ -62,7 +62,7 @@ Delete 輸入框顯示兩到四行內容，超過後在框內捲動。右上角�
 
 ## Keep 保留規則流程（keep／clean）
 
-預設設定為 `~/.config/docker-clean/config.yaml`，也可在子命令後指定 `--config /path/config.yaml`。設定不存在時只能由 TUI 建立，`clean` 會停止。TUI 每行一條規則，可直接新增、編輯或刪除；選項預設關閉。Enter 或點擊 image 列可勾選，再按「產生規則」把實際 tag 轉成跳脫且有 `^...$` 錨點的 Regex。無 tag 的 image 不產生名稱規則。
+預設設定為 `~/.config/docker-clean/images.yaml`（新檔不存在時相容舊 `config.yaml`），也可在子命令後指定 `--config /path/config.yaml`。設定不存在時只能由 TUI 建立，`clean` 會停止。TUI 每行一條規則，可直接新增、編輯或刪除；選項預設關閉。Enter 或點擊 image 列可勾選，再按「產生規則」把實際 tag 轉成跳脫且有 `^...$` 錨點的 Regex。無 tag 的 image 不產生名稱規則。
 
 儲存後按「預覽」，檢查中央的完整內容，再按「確認刪除」；「取消」不操作 Docker。CLI 須輸入完整 `DELETE` 才執行。修改規則或選項會使舊預覽失效。列表依序顯示 tag（長名稱換行）、人類可讀大小、精確到秒的建立日期、動作原因；Space／Enter／點擊可勾選，不跳回第一列。完整 ID 與引用容器保留在詳細預覽；Ctrl+Q 離開。
 
@@ -115,3 +115,35 @@ uv run pytest tests/unit tests/integration
 ```
 
 單元／Pilot 測試不能代替真正終端或 Docker 的刪除證據。獨立驗收結果見 [QA 紀錄](docs/qa/results.md)，重跑方式見 [驗收指令](tests/qa_e2e/README.md)；破壞性驗證只允許專用隔離 Engine，不能操作主機既有映像。
+
+## 容器自動清理
+
+`dc container clean` 依「最後停止時間」清理普通容器，預設只預覽。只接受 exited；執行中、從未啟動、其他狀態及 Swarm 管理的容器一律跳過。
+
+設定範例見 [examples/containers.yaml](examples/containers.yaml)。檢查其中保留清單後，存為 `~/.config/docker-clean/containers.yaml`。`stopped_days: 7` 表示連續停止滿 7 天。`keep.compose` 的 project 不指定 services 時保留整套部署；指定 services 時保留列出服務的全部實例。`keep.container_names` 精確比對容器名稱。任何保留規則命中即保留。設定不存在或錯誤時停止；明確 `keep: {}` 表示沒有保留規則。
+
+```bash
+dc container clean
+dc container clean --config /path/to/containers.yaml --json
+dc container clean --yes
+```
+
+刪除會失去容器可寫層；不刪 volume、掛載資料、image 或其他資源，不使用 force。保留的匿名 volume 不保證下次重建自動掛回。刪除前重新檢查狀態及設定，無法完全消除外部啟停的競態。若容器在列出後、inspect 前被其他程序移除，本次清理會報錯停止，等待下次排程；不自動重試。結果失敗退出碼為 1，語法錯誤為 2；JSON 含已完成紀錄，即使後續查詢失敗也不丟失。
+
+image 設定的新預設位置是 `~/.config/docker-clean/images.yaml`。若只有舊 `config.yaml`，仍相容讀寫該檔；兩者存在時新檔優先，明確 `--config` 不受影響。要遷移可用 `cp -n ~/.config/docker-clean/config.yaml ~/.config/docker-clean/images.yaml`，保留原檔且不覆蓋新檔。`dc image clean` 仍只使用命令列規則。
+
+每日 03:00 排程範例（先預覽確認規則，再自行加入 `crontab -e`）：
+
+```bash
+mkdir -p ~/.local/state/docker-clean
+command -v dc
+```
+
+以下 `/ABS/PATH/dc` 必須替換為上一步的絕對路徑；cron 帳號需有 Docker 權限，PATH 需包含 docker。系統時區決定 03:00 的實際時間；台灣主機應為 Asia/Taipei。cron 服務必須啟用。
+
+```cron
+PATH=/usr/local/bin:/usr/bin:/bin
+0 3 * * * /usr/bin/flock -n /home/swy/.local/state/docker-clean/container.lock /ABS/PATH/dc container clean --yes --json >> /home/swy/.local/state/docker-clean/container.log 2>&1
+```
+
+以上為此主機範例，其他帳號需替換 `/home/swy`。紀錄可由系統 logrotate 管理；工具不安裝排程，也不順便清理 image。Swarm 舊 task 容器需另外盤點，不屬於本指令範圍。

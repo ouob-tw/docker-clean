@@ -6,14 +6,14 @@ import re
 import sys
 from pathlib import Path
 
-from .config import CleanError, Config
+from .config import CleanError, Config, default_image_config
 from .engine import Docker
 from .plan import execute, plan, render, render_results
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(prog="dc")
-    commands = parser.add_subparsers(required=True)
+    commands = parser.add_subparsers(dest="resource", required=True)
     image = commands.add_parser("image")
     actions = image.add_subparsers(dest="action", required=True)
     for name, help_text in (("keep", "Image Keep：管理保留規則"),
@@ -21,7 +21,7 @@ def main() -> int:
         tui = actions.add_parser(name, help=help_text)
         if name == "keep":
             tui.add_argument("--config", type=Path,
-                             default=Path.home() / ".config/docker-clean/config.yaml")
+                             default=default_image_config())
     clean = actions.add_parser("clean", help="依 Regex 預覽或清理本機 image")
     clean.add_argument("--delete", action="append", default=[], metavar="REGEX",
                        help="只刪除命中的 image；可重複")
@@ -30,7 +30,17 @@ def main() -> int:
     clean.add_argument("--yes", action="store_true", help="執行刪除；未指定時只預覽")
     clean.add_argument("--force", action="store_true", help="向 Docker 要求強制刪除")
     clean.add_argument("--json", action="store_true", help="輸出單一 JSON 物件")
+    container = commands.add_parser("container", help="清理停止滿指定天數的容器")
+    container_actions = container.add_subparsers(dest="action", required=True)
+    container_clean = container_actions.add_parser("clean", help="依設定預覽或清理容器")
+    container_clean.add_argument("--config", type=Path,
+                                 default=Path.home() / ".config/docker-clean/containers.yaml")
+    container_clean.add_argument("--yes", action="store_true")
+    container_clean.add_argument("--json", action="store_true")
     args = parser.parse_args()
+    if args.resource == "container":
+        from .containers import run
+        return run(args.config, args.yes, args.json)
     if args.action in {"keep", "delete"}:
         from .cli import main as tui_main
         return tui_main([args.action, "--config", str(args.config)]

@@ -1,0 +1,21 @@
+version: 1
+stopped_days: 7
+
+keep:
+  compose:
+    # 省略 services 即保留整個 project；空陣列不合法。
+    - project: agent_manager_test
+    - project: nuu
+    - project: langfuse
+      services: [postgres]
+    - project: docker
+      services: [infinity]
+    - project: gohakka-infra
+      services: [worker-asr-v3turbo-gpu1-a]
+  container_names:
+    - qa-agentscope
+    - ollama_t
+    - openvas
+    - live_agent_demo-livekit-1
+    - web-ui-browser-use-webui-1
+    - zoraxy
