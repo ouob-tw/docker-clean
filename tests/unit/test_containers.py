@@ -203,7 +203,7 @@ def test_text_default_candidates_and_all_only_affects_display(cli):
     code, text = run(json_output=False)
     assert code == 0 and 'old |' in text and '/old-data' in text
     assert 'active |' not in text and '/active-data' not in text
-    assert '合計 2' in text and '只存在容器裡的檔案也會刪除' in text
+    assert '合計 2' in text and '刪除容器及內部檔案，保留掛載資料。' in text
     code, text = run(json_output=False, show_all=True)
     assert 'active |' in text and '/active-data' not in text
     assert not fake.deleted
@@ -225,7 +225,7 @@ def test_zero_candidates_has_no_delete_hint(cli):
     fake.items = [item(days=1)]
     code, text = run(json_output=False)
     assert code == 0 and '沒有刪除候選' in text
-    assert '加上 --yes' not in text and '只存在容器裡' not in text
+    assert '加上 --yes' not in text and '刪除容器及內部檔案' not in text
 
 
 def test_incomplete_plan_never_reports_zero_candidates_as_success(cli):

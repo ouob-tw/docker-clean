@@ -148,7 +148,7 @@ def render_preview(entries: list[dict], days: int | None, path: Path,
     if complete and not show_all:
         print("使用 --all 查看全部容器與保留原因。")
     if complete and counts["candidate"]:
-        print("刪除容器後，只存在容器裡的檔案也會刪除；另外儲存在主機資料夾或 Docker volume 的資料會保留。")
+        print("刪除容器及內部檔案，保留掛載資料。")
     if complete and counts["candidate"] and not yes:
         print("僅預覽，未修改 Docker；加上 --yes 才執行。")
 

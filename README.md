@@ -129,7 +129,7 @@ dcl container clean --config /path/to/containers.yaml --json
 dcl container clean --yes
 ```
 
-刪除容器後，只存在容器裡的檔案也會刪除；另外儲存在主機資料夾或 Docker volume 的資料會保留。不刪 image 或其他資源，不使用 force。保留的匿名 volume 不保證下次重建自動掛回。刪除前重新檢查狀態及設定，無法完全消除外部啟停的競態。若容器在列出後、inspect 前被其他程序移除，本次清理會報錯停止，等待下次排程；不自動重試。結果失敗退出碼為 1，語法錯誤為 2；JSON 含已完成紀錄，即使後續查詢失敗也不丟失。
+刪除容器及內部檔案，保留掛載資料。不刪 image 或其他資源，不使用 force。保留的匿名 volume 不保證下次重建自動掛回。刪除前重新檢查狀態及設定，無法完全消除外部啟停的競態。若容器在列出後、inspect 前被其他程序移除，本次清理會報錯停止，等待下次排程；不自動重試。結果失敗退出碼為 1，語法錯誤為 2；JSON 含已完成紀錄，即使後續查詢失敗也不丟失。
 
 image 設定的新預設位置是 `~/.config/docker-clean/images.yaml`。若只有舊 `config.yaml`，仍相容讀寫該檔；兩者存在時新檔優先，明確 `--config` 不受影響。要遷移可用 `cp -n ~/.config/docker-clean/config.yaml ~/.config/docker-clean/images.yaml`，保留原檔且不覆蓋新檔。`dcl image clean` 仍只使用命令列規則。
 
