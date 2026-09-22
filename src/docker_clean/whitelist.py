@@ -67,7 +67,7 @@ def delete_selected(images: tuple[Image, ...], docker: Docker,
 
 
 class WhitelistApp(App):
-    TITLE = "Docker Clean — 白名單刪除"
+    TITLE = "Docker Image Clean — Delete（刪除選取項目）"
     CSS = CleanerApp.CSS + """
     #rules { height: 4; }
     """

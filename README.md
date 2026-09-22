@@ -1,6 +1,29 @@
 # Docker Clean
 
-提供白名單勾選刪除與既有 Regex 保留流程；每次預覽、確認後才執行。僅清理本機 Docker image／tag，沒有 prune、排程或跳過確認功能。
+提供 Delete 勾選刪除、Keep 保留規則流程與自動化 CLI。僅清理本機 Docker image／tag，不使用 prune。
+
+## Image 清理入口
+
+- `dc image keep`：開啟保留規則 TUI，命中者保留、清理其餘。
+- `dc image delete`：開啟刪除選取 TUI，只刪除勾選者。
+- `dc image clean`：自動化 CLI，使用以下參數。
+
+畫面標題分別標示 Image Keep／Delete。舊 `docker-clean tui`／`whitelist` 保留相容，新指令也可寫成 `docker-clean keep`／`delete`。
+
+## 自動化 CLI：dc image clean
+
+```sh
+uv run dc image clean --delete '^myapp:dev-'
+uv run dc image clean --keep '^postgres:'
+uv run dc image clean --delete '^myapp:dev-' --keep ':stable$' --yes --json
+# uv tool install . 後可直接使用 dc image clean
+```
+
+預設只預覽、不詢問輸入；加上 `--yes` 才執行。`--delete` 只選命中的 image，`--keep` 保護命中的整個 image；兩者同時使用時保留優先。只有 `--keep` 時清理其餘 image。兩個參數都可重複，多條採 OR，以 Python `re.search` 比對完整 tag；任一 tag 命中即作用於整個 ID。至少提供一條規則，空白或無效 Regex 拒絕執行；全部匹配請明確用 `.*`。
+
+`--delete '^None$'` 選無 tag image；`--keep` 僅匹配真實 tag，沿用既有保留語意。預設跳過任何容器引用；`--force` 才要求強制刪除，與 `--yes` 分開。按 ID 刪除包含全部 tag，使用 `--no-prune`，不改動容器。刪除前重新盤點，狀態變動就跳過，查詢失敗停止；競態限制同下文。
+
+此入口不讀寫 TUI YAML 設定。`--json` 輸出單一 JSON 物件，包含 `mode`、`ok`、規則、`force`、`entries`（image、動作、理由、目標）及 `results`（status、target、detail）；規則驗證或初次盤點錯誤包含 `ok: false` 與 `error`；逐項執行失敗則以 `ok: false` 及 `results[].detail` 回報。語法錯誤仍由參數解析器輸出至 stderr。結束碼：0 成功／預覽／無候選／狀態變動跳過，1 規則驗證或 Docker 操作失敗，2 命令語法錯誤。自動化可檢查 results 區分成功與跳過；不保證回收容量。
 
 ## 安裝與使用
 
@@ -8,17 +31,17 @@
 
 ```sh
 uv sync --locked
-uv run docker-clean whitelist
-uv run docker-clean tui
+uv run dc image delete
+uv run dc image keep
 uv run docker-clean clean
 # 或安裝成日常指令
 uv tool install .
-docker-clean tui
+dc image keep
 ```
 
-## 白名單刪除（新流程）
+## Delete 刪除（新流程）
 
-執行 `uv run docker-clean whitelist`。預設使用 E-Ink 白底黑字主題，游標與聚焦按鈕黑白反相，停用按鈕以刪除線區別，避免依賴灰底或淡字。初始不勾選任何 image，不讀寫舊的保留設定；Regex 與勾選只用於本次操作。
+執行 `uv run dc image delete`。預設使用 E-Ink 白底黑字主題，游標與聚焦按鈕黑白反相，停用按鈕以刪除線區別，避免依賴灰底或淡字。初始不勾選任何 image，不讀寫舊的保留設定；Regex 與勾選只用於本次操作。
 
 1. 上方輸入框每行一條 Python Regex；多條採 OR，使用 `re.search` 比對完整 `repository:tag`。「Regex 篩選」只改變顯示，「Regex 勾選」將命中項目加入勾選。旁邊「顯示全部」解除篩選，保留 Regex 與勾選；未篩選時停用。空白行忽略，清空後篩選也可恢復全部；無效 Regex 保留既有篩選與勾選。
 2. 下方表格用 Space／Enter／點擊增減勾選，也可「清除勾選」。同一 image 任一 tag 命中就勾選整個 image。無 tag 顯示 `None`，可用 `^None$` 篩選或「Regex 勾選」；`.*` 也包含無 tag 項目。`None` 僅用於顯示與比對，不會新增實際 tag。
@@ -31,13 +54,13 @@ docker-clean tui
 
 兩種 TUI 預設依 tag 字母升冪排序，點擊欄位標題切換升冪／降冪。勾選保持當下列位置；若按勾選或動作原因排序，再點標題即可重新排列。主畫面沒有外層捲軸，中央清單或預覽自行捲動，底部操作按鈕固定。輸入框與詳細紀錄的滾輪到達邊界時不會帶動外層，內容不足以捲動時也一樣。
 
-白名單輸入框顯示兩到四行內容，超過後在框內捲動。右上角「使用說明」開啟懸浮視窗，標題不再展開。聚焦按鈕可用 Space／Enter 操作。「刷新」重新取得 Docker 資料。底部操作按鈕與快捷鍵位於同一排，按鈕靠左、Ctrl+Q／Ctrl+P 靠右；Ctrl+T 仍可切換主題。
+Delete 輸入框顯示兩到四行內容，超過後在框內捲動。右上角「使用說明」開啟懸浮視窗，標題不再展開。聚焦按鈕可用 Space／Enter 操作。「刷新」重新取得 Docker 資料。底部操作按鈕與快捷鍵位於同一排，按鈕靠左、Ctrl+Q／Ctrl+P 靠右；Ctrl+T 仍可切換主題。
 
-兩個 TUI 入口都可按 Ctrl+T，搜尋並選擇 `e-ink`。保留規則（`tui`）會保存所選主題，重開後繼續使用；白名單預設為 e-ink，切換只作用於本次。e-ink 在 `NO_COLOR` 環境下仍保留明確的白底黑字。
+兩個 TUI 入口都可按 Ctrl+T，搜尋並選擇 `e-ink`。保留規則（`keep`）會保存所選主題，重開後繼續使用；Delete 預設為 e-ink，切換只作用於本次。e-ink 在 `NO_COLOR` 環境下仍保留明確的白底黑字。
 
 確認後開啟懸浮視窗，顯示按 image 計算的進度與目前階段，Docker 工作在背景執行緒執行。詳細 log 舊的在上、新的在下，保留原始回報；停在底部時跟進新紀錄，往上閱讀時保留位置。執行期間仍可捲動，背景操作與視窗關閉暫時鎖住；完成後按「返回清單」或 Esc 關閉。查詢中止時會顯示尚未處理的數量，不會顯示假完成。
 
-## 舊版保留規則流程（tui／clean）
+## Keep 保留規則流程（keep／clean）
 
 預設設定為 `~/.config/docker-clean/config.yaml`，也可在子命令後指定 `--config /path/config.yaml`。設定不存在時只能由 TUI 建立，`clean` 會停止。TUI 每行一條規則，可直接新增、編輯或刪除；選項預設關閉。Enter 或點擊 image 列可勾選，再按「產生規則」把實際 tag 轉成跳脫且有 `^...$` 錨點的 Regex。無 tag 的 image 不產生名稱規則。
 

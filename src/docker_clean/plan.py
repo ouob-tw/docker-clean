@@ -68,7 +68,7 @@ class Result:
 ProgressCallback = Callable[[Image, str, tuple[Result, ...] | None], None]
 
 
-def execute(preview: Preview, path: Path, docker: Docker,
+def execute(preview: Preview, path: Path | None, docker: Docker,
             progress: ProgressCallback | None = None) -> list[Result]:
     results: list[Result] = []
     for entry in preview.entries:
@@ -82,7 +82,7 @@ def execute(preview: Preview, path: Path, docker: Docker,
                 if progress:
                     progress(entry.image, "重新檢查狀態", None)
                 try:
-                    config, revision = load(path)
+                    config, revision = load(path) if path is not None else (preview.config, preview.revision)
                     if revision != preview.revision or config != preview.config:
                         raise CleanError("設定已改變，停止執行；請重新預覽")
                     current = docker.snapshot().get(entry.image.id)

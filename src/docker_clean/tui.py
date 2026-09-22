@@ -62,7 +62,7 @@ def readable_date(value: str) -> str:
 
 
 class CleanerApp(App):
-    TITLE = "Docker Clean"
+    TITLE = "Docker Image Clean — Keep（保留規則）"
     CSS = """
     Screen { overflow: hidden; }
     #rules { height: 6; }

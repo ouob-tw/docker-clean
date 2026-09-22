@@ -7,6 +7,7 @@ dependencies = ["textual>=6.6,<9", "PyYAML>=6,<7"]
 
 [project.scripts]
 docker-clean = "docker_clean.cli:main"
+dc = "docker_clean.automation:main"
 
 [build-system]
 requires = ["hatchling"]

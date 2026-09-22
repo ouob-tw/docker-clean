@@ -55,3 +55,33 @@ def test_whitelist_entry_does_not_require_legacy_config(tmp_path, monkeypatch):
     monkeypatch.setattr(WhitelistApp, "run", lambda self: calls.append("run"))
     assert cli.main() == 0
     assert calls == ["run"]
+
+
+@pytest.mark.parametrize("mode", ["keep", "delete"])
+def test_dc_image_tui_routes_and_titles(tmp_path, monkeypatch, mode):
+    from docker_clean import automation
+    from docker_clean.tui import CleanerApp
+    from docker_clean.whitelist import WhitelistApp
+
+    path = tmp_path / "custom.yaml"
+    calls = []
+    def keep_run(self):
+        assert self.path == path
+        calls.append(self.title)
+    monkeypatch.setattr(CleanerApp, "run", keep_run)
+    monkeypatch.setattr(WhitelistApp, "run", lambda self: calls.append(self.title))
+    args = ["dc", "image", mode]
+    if mode == "keep":
+        args.extend(["--config", str(path)])
+    monkeypatch.setattr(sys, "argv", args)
+    assert automation.main() == 0
+    assert len(calls) == 1 and "Image" in calls[0] and mode.capitalize() in calls[0]
+
+
+@pytest.mark.parametrize("command", ["delete", "whitelist"])
+def test_delete_entry_accepts_config_before_command(tmp_path, monkeypatch, command):
+    from docker_clean.whitelist import WhitelistApp
+    calls = []
+    monkeypatch.setattr(WhitelistApp, "run", lambda self: calls.append("run"))
+    assert cli.main(["--config", str(tmp_path / "absent"), command]) == 0
+    assert calls == ["run"]

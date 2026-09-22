@@ -12,20 +12,23 @@ from .engine import Docker
 from .plan import execute, plan, render, render_results
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="本機 Docker image 清理：預覽後確認")
-    parser.add_argument("command", choices=["whitelist", "tui", "clean"])
+    parser.add_argument("command", choices=["keep", "delete", "clean", "whitelist", "tui"],
+                        metavar="{keep,delete,clean}")
     parser.add_argument("--config", type=Path, default=Path.home() / ".config/docker-clean/config.yaml")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    # Accept previous entrypoints without advertising the ambiguous names.
+    args.command = {"whitelist": "delete", "tui": "keep"}.get(args.command, args.command)
     try:
-        if args.command in {"tui", "whitelist"}:
+        if args.command in {"keep", "delete"}:
             from .terminal import use_cell_coordinates
             use_cell_coordinates()
             if sys.stdout.isatty():
                 # Clear pixel/resize modes a previous TUI may have left enabled.
                 sys.stdout.write("\x1b[?1016l\x1b[?2048l")
                 sys.stdout.flush()
-            if args.command == "whitelist":
+            if args.command == "delete":
                 from .whitelist import WhitelistApp
                 WhitelistApp().run()
             else:

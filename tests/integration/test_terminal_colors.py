@@ -28,11 +28,11 @@ CleanerApp(Path(sys.argv[1]), EmptyEngine()).run()
     output = b""
     try:
         deadline = time.monotonic() + 10
-        while b"Docker Clean" not in output and time.monotonic() < deadline:
+        while b"Docker Image Clean" not in output and time.monotonic() < deadline:
             if select.select([master], [], [], 0.2)[0]:
                 output += os.read(master, 65536)
-        assert b"Docker Clean" in output, output[-1000:]
-        header = output[:output.index(b"Docker Clean") + len(b"Docker Clean")]
+        assert b"Docker Image Clean" in output, output[-1000:]
+        header = output[:output.index(b"Docker Image Clean") + len(b"Docker Image Clean")]
         assert b"38;2;0;0;0;48;2;0;0;0m" not in header, "Header rendered black on black"
     finally:
         os.write(master, b"\x11")
@@ -71,10 +71,10 @@ CleanerApp(path, EmptyEngine()).run()
     output = b""
     try:
         deadline = time.monotonic() + 5
-        while b"Docker Clean" not in output and time.monotonic() < deadline:
+        while b"Docker Image Clean" not in output and time.monotonic() < deadline:
             if select.select([master], [], [], 0.05)[0]:
                 output += os.read(master, 65536)
-        assert b"Docker Clean" in output
+        assert b"Docker Image Clean" in output
         assert b"38;2;0;0;0;48;2;255;255;255" in output
     finally:
         os.write(master, b"\x11")

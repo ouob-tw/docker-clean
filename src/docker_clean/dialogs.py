@@ -31,7 +31,7 @@ class HelpScreen(DialogScreen):
 
     def compose(self) -> ComposeResult:
         rules = (
-            "刪除白名單 Regex：每行一條，任一條命中完整 tag 就勾選整個 image；空白行忽略。\n"
+            "Image Delete 刪除規則：每行一條 Regex，任一條命中完整 tag 就勾選整個 image；空白行忽略。\n"
             "輸入框預設兩行，最多四行，超過後在框內捲動。\n"
             "Regex 篩選只改變顯示，不改變勾選；「顯示全部」解除篩選並保留 Regex 與勾選。\n"
             "無 tag 顯示 None，可用 ^None$ 篩選或 Regex 勾選；.* 也包含無 tag 項目。\n"
@@ -40,7 +40,7 @@ class HelpScreen(DialogScreen):
             "動作原因顯示容器引用；詳細資料可查看完整 ID 與全部 tag。\n"
             "確認後按完整 ID 強制刪除，不停止或刪除容器。"
             if self.whitelist else
-            "Regex 保留規則：每行一條，以 Python re.search 比對完整 tag，多條採 OR。\n"
+            "Image Keep 保留規則：每行一條 Regex，以 Python re.search 比對完整 tag，多條採 OR。\n"
             "任一 tag 命中就保護整個 image；先儲存，再預覽與確認。\n"
             "勾選 image 後按「產生規則」可產生精確 tag 規則；無 tag 不產生規則。\n"
             "逐一移除標籤的最後一個 tag 可能刪除 image；force 不保證成功。\n"
