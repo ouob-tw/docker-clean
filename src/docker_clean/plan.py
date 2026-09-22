@@ -3,7 +3,7 @@ from pathlib import Path
 from collections.abc import Callable, Iterable
 import re
 
-from .config import CleanError, Config, load
+from .config import CleanError, Config, read_bytes
 from .engine import Docker, Image
 
 
@@ -82,10 +82,12 @@ def execute(preview: Preview, path: Path | None, docker: Docker,
                 if progress:
                     progress(entry.image, "重新檢查狀態", None)
                 try:
-                    config, revision = load(path) if path is not None else (preview.config, preview.revision)
-                    if revision != preview.revision or config != preview.config:
+                    # Compare source bytes; preview.config may include CLI overrides.
+                    if path is not None and read_bytes(path) != preview.revision:
                         raise CleanError("設定已改變，停止執行；請重新預覽")
                     current = docker.snapshot().get(entry.image.id)
+                    if path is not None and read_bytes(path) != preview.revision:
+                        raise CleanError("設定已改變，停止執行；請重新預覽")
                 except CleanError as exc:
                     results.append(Result("失敗", target, str(exc)))
                     return results
@@ -95,7 +97,7 @@ def execute(preview: Preview, path: Path | None, docker: Docker,
                 if progress:
                     progress(entry.image, f"正在執行：{entry.action} {target}", None)
                 try:
-                    output = docker.remove(target, config.force)
+                    output = docker.remove(target, preview.config.force)
                 except CleanError as exc:
                     results.append(Result("失敗", target, str(exc)))
                     continue

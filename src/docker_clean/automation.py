@@ -1,4 +1,4 @@
-"""Non-interactive image cleanup using explicit command-line rules."""
+"""Non-interactive image cleanup using config and command-line rules."""
 import argparse
 from dataclasses import asdict, replace
 import json
@@ -6,7 +6,7 @@ import re
 import sys
 from pathlib import Path
 
-from .config import CleanError, Config, default_image_config
+from .config import CleanError, Config, default_image_config, load
 from .engine import Docker
 from .plan import execute, plan, render, render_results
 
@@ -23,6 +23,8 @@ def main() -> int:
             tui.add_argument("--config", type=Path,
                              default=default_image_config())
     clean = actions.add_parser("clean", help="依 Regex 預覽或清理本機 image")
+    clean.add_argument("--config", type=Path, default=default_image_config(),
+                       help="排除清單設定檔；預設 ~/.config/docker-clean/images.yaml")
     clean.add_argument("--delete", action="append", default=[], metavar="REGEX",
                        help="只刪除命中的 image；可重複")
     clean.add_argument("--keep", action="append", default=[], metavar="REGEX",
@@ -47,30 +49,30 @@ def main() -> int:
         return tui_main([args.action, "--config", str(args.config)]
                         if args.action == "keep" else [args.action])
     try:
-        if not args.keep and not args.delete:
-            raise CleanError("至少提供一個 --keep 或 --delete Regex")
+        saved, revision = load(args.config)
+        assert revision is not None
         if any(not value.strip() for value in args.keep + args.delete):
             raise CleanError("Regex 不可空白；全部匹配請明確使用 .*")
-        config = Config(keep=tuple(args.keep), force=args.force)
+        config = Config(keep=saved.keep + tuple(args.keep), force=args.force)
         config.validate()
         try:
             patterns = [re.compile(value) for value in args.delete]
         except re.error as exc:
             raise CleanError(f"無效 delete Regex: {exc}") from exc
         docker = Docker()
-        preview = plan(config, docker.snapshot())
+        preview = plan(config, docker.snapshot(), revision)
         if patterns:
             preview = replace(preview, entries=tuple(
                 replace(entry, action="跳過", reason="未命中 delete 規則", targets=())
                 if entry.targets and not any(pattern.search(tag)
                     for tag in entry.image.tags or ("None",) for pattern in patterns)
                 else entry for entry in preview.entries))
-        results = execute(preview, None, docker) if args.yes else []
+        results = execute(preview, args.config, docker) if args.yes else []
         failed = any(result.status == "失敗" for result in results)
         if args.json:
             print(json.dumps({"mode": "execute" if args.yes else "preview",
                               "ok": not failed, "force": args.force,
-                              "keep": args.keep, "delete": args.delete,
+                              "keep": list(config.keep), "delete": args.delete,
                               "entries": [asdict(entry) for entry in preview.entries],
                               "results": [asdict(result) for result in results]}, ensure_ascii=False))
         else:

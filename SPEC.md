@@ -11,10 +11,18 @@
 
 - 新增 `dcl image clean`；本節對此入口取代舊版不提供略過確認的限制，其餘入口維持原行為。
 - `--delete REGEX` 只清理命中者，`--keep REGEX` 保護命中者；可重複、多條 OR、Python `re.search` 比對完整 tag，同 ID 任一 tag 命中即作用於整個 ID，保留優先。只有 keep 時清理其餘。
-- 至少提供一條規則，空白或無效 Regex 拒絕執行。delete 以 `None` 匹配無 tag image，keep 只匹配真實 tag。
+- 預設載入設定檔保留規則，命令列空白或無效 Regex 拒絕執行。delete 以 `None` 匹配無 tag image，keep 只匹配真實 tag。
 - 預設只預覽，不詢問輸入；`--yes` 執行，`--force` 獨立控制強制刪除，預設跳過容器引用。按完整 ID 使用 `--no-prune` 刪除，包含全部 tag。
-- 不讀寫舊設定；重用本機 socket 限制、逐項狀態重新檢查、狀態變動跳過、查詢失敗停止及個別失敗繼續規則。
+- 設定檔載入依下節；重用本機 socket 限制、逐項狀態重新檢查、狀態變動跳過、查詢失敗停止及個別失敗繼續規則。
 - `--json` 輸出單一結果物件，含預覽與執行紀錄；規則或 Docker 錯誤輸出 JSON 錯誤。命令語法錯誤維持 stderr。結束碼 0 表示成功、預覽、無候選或狀態變動跳過；1 表示驗證或操作失敗；2 表示命令語法錯誤。
+
+## Image 自動化設定檔（2026-09-23 使用者授權）
+
+- 比照 container clean：`dcl image clean` 預設讀取 `~/.config/docker-clean/images.yaml`，不存在時相容舊 `config.yaml`；`--config` 指定時只讀指定檔案。設定缺失、讀取或驗證失敗時停止，不因提供命令列規則而略過。
+- 沿用 Image YAML 格式，只採用 `keep` 排除清單，與命令列 `--keep` 合併為 OR，保留優先於 `--delete`。不指定 `--delete` 時清理其餘未受保護 image；明確 `keep: []` 合法且文字預覽提示沒有保留規則。
+- 不套用 YAML 的 force、remove_tags 或主題；`--yes`、`--force` 仍由命令列控制。不修改設定檔。
+- 每項刪除前及重新盤點後檢查設定檔原始內容，變更、消失或讀取失敗即停止後續刪除並回傳失敗，保留已完成結果。
+- JSON 的 keep 回報合併後規則。容器設定載入與 TUI 入口維持既有行為。
 
 ## Delete 刪除新流程（2026-09-21 使用者直接授權）
 
@@ -170,7 +178,7 @@ cleanup:
 
 本節擴充原本僅操作 image 的範圍，僅 `dcl container clean` 可以刪除容器；既有 image 入口不改變容器。排程交由外部 cron，不新增背景服務，不自動安裝刪除排程。
 
-- image 設定預設為 `~/.config/docker-clean/images.yaml`；不存在時相容讀寫既有 `config.yaml`，兩者存在時以 images.yaml 優先，不合併。明確 `--config` 始終使用指定檔案。遷移時保留原檔、不覆蓋既有 images.yaml。`dcl image clean` 仍只讀命令列規則。
+- image 設定預設為 `~/.config/docker-clean/images.yaml`；不存在時相容讀寫既有 `config.yaml`，兩者存在時以 images.yaml 優先，不合併。明確 `--config` 始終使用指定檔案。遷移時保留原檔、不覆蓋既有 images.yaml。`dcl image clean` 同樣載入此設定檔的 keep，與命令列規則合併。
 - 容器使用獨立 `~/.config/docker-clean/containers.yaml`，可用 `--config` 指定；唯一規則來源為設定檔。必填 version: 1、正整數 stopped_days、keep。keep 支援 compose 與 container_names；缺省子清單為空，明確 keep: {} 合法且預覽警示無保留規則。
 - compose 是規則陣列，每條必填 project、可選 services（非空字串陣列）。省略 services 保留整個 project；提供時保留該 project 內列出的所有 service 實例。services: [] 為錯誤。container_names 為名稱陣列。全部精確比對，任一命中即保留；不同於 image tag Regex。Compose 以 Docker labels 識別，不猜測名稱。
 - 僅 status=exited 且最後 FinishedAt 距現在至少 stopped_days 天的容器符合。預設範例為 7 天，不以建立時間計算。created、dead、running、paused、restarting、removing 與含 Swarm task/service ID label 的容器一律跳過並說明。
