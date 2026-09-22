@@ -1,0 +1,18 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_receipts_without_inventory_do_not_repeat_full_id_on_every_line ______
+
+    def test_receipts_without_inventory_do_not_repeat_full_id_on_every_line():
+        target = "sha256:" + "a" * 64
+        results = [Result("移除 tag", target, "Untagged: app:1"),
+                   Result("刪除 image", target, f"Deleted: {target}")]
+>       assert render_results(results).count(target) == 1
+E       AssertionError: assert 3 == 1
+E        +  where 3 = <built-in method count of str object at 0x332ffa70>('sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+E        +    where <built-in method count of str object at 0x332ffa70> = '移除 tag | sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | Untagged: app:1\n刪除 image | sha256...aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | Deleted: sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'.count
+E        +      where '移除 tag | sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | Untagged: app:1\n刪除 image | sha256...aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | Deleted: sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' = render_results([Result(status='移除 tag', target='sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', detail='Unt...aaaaaaaaaaaaaaaaaaaaaaaaa', detail='Deleted: sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')])
+
+tests/unit/test_result_display.py:40: AssertionError
+=========================== short test summary info ============================
+FAILED tests/unit/test_result_display.py::test_receipts_without_inventory_do_not_repeat_full_id_on_every_line
+1 failed in 0.09s

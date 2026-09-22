@@ -1,0 +1,30 @@
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+________ test_eink_available_in_theme_picker_and_can_be_selected[True] _________
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-892/test_eink_available_in_theme_p1')
+legacy = True
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    async def test_eink_available_in_theme_picker_and_can_be_selected(tmp_path, legacy):
+        path = tmp_path / "config.yaml"
+        if legacy:
+            save(path, Config(("^saved:",)), None)
+        app = CleanerApp(path, Inventory()) if legacy else WhitelistApp(Inventory())
+        async with app.run_test(size=(100, 30)) as pilot:
+            app.theme = "nord"
+            await pilot.pause()
+            app.query_one(TextArea).load_text("unfinished[")
+            await pilot.press("ctrl+t", "e", "-", "i", "n", "k")
+            await pilot.pause(0.3)
+>           assert app.screen.query_one(OptionList).option_count == 1
+E           AssertionError: assert 0 == 1
+E            +  where 0 = CommandList().option_count
+E            +    where CommandList() = query_one(OptionList)
+E            +      where query_one = CommandPalette(classes='--textual-command-palette -ready').query_one
+E            +        where CommandPalette(classes='--textual-command-palette -ready') = CleanerApp(title='Docker Clean', classes={'-theme-nord', '-dark-mode'}, pseudo_classes={'nocolor', 'dark', 'focus'}).screen
+
+tests/integration/test_eink_theme.py:29: AssertionError
+=========================== short test summary info ============================
+FAILED tests/integration/test_eink_theme.py::test_eink_available_in_theme_picker_and_can_be_selected[True]
+1 failed, 1 passed in 2.37s

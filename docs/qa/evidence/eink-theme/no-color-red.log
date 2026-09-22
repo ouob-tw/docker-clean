@@ -1,0 +1,45 @@
+..F                                                                      [100%]
+=================================== FAILURES ===================================
+_____________ test_eink_renders_black_on_white_with_no_color[True] _____________
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-894/test_eink_renders_black_on_whi1')
+legacy = True
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    def test_eink_renders_black_on_white_with_no_color(tmp_path, legacy):
+        master, slave = pty.openpty()
+        code = """
+    from docker_clean import cli
+    from docker_clean.whitelist import WhitelistApp
+    class EmptyEngine:
+        def snapshot(self): return {}
+    """
+        code += """
+    from pathlib import Path
+    import sys
+    from docker_clean.config import Config, save
+    from docker_clean.tui import CleanerApp
+    path = Path(sys.argv[1])
+    save(path, Config(theme="e-ink"), None)
+    CleanerApp(path, EmptyEngine()).run()
+    """ if legacy else "WhitelistApp(EmptyEngine()).run()\n"
+        process = subprocess.Popen(
+            [sys.executable, "-c", code, str(tmp_path / "config.yaml")],
+            stdin=slave, stdout=slave, stderr=slave,
+            env={**os.environ, "NO_COLOR": "1", "TERM": "xterm-256color", "COLORTERM": "truecolor"},
+        )
+        os.close(slave)
+        output = b""
+        try:
+            deadline = time.monotonic() + 5
+            while b"Docker Clean" not in output and time.monotonic() < deadline:
+                if select.select([master], [], [], 0.05)[0]:
+                    output += os.read(master, 65536)
+            assert b"Docker Clean" in output
+>           assert b"38;2;0;0;0;48;2;255;255;255" in output
+E           AssertionError: assert b'38;2;0;0;0;48;2;255;255;255' in b'\x1b[?1049h\x1b[?1000h\x1b[?1003h\x1b[?1015h\x1b[?1006h\x1b[?25l\x1b[?1004h\x1b[>25u\x1b[?2026$p\x1b[?2048$p\x1b[?20...6\xb6\x88 \x1b[0m\x1b[39;49m \x1b[0m\x1b[39;49m \x1b[0m\x1b[39;49m                                    \x1b[0m\x1b[2;3H'
+
+tests/integration/test_terminal_colors.py:78: AssertionError
+=========================== short test summary info ============================
+FAILED tests/integration/test_terminal_colors.py::test_eink_renders_black_on_white_with_no_color[True]
+1 failed, 2 passed in 1.35s

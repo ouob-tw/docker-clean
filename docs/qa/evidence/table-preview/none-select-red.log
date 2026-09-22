@@ -1,0 +1,68 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+________ test_matching_is_or_full_tag_search_and_untagged_matches_none _________
+
+    def test_matching_is_or_full_tag_search_and_untagged_matches_none():
+        images = {str(i): Image(str(i), tags, 1, "2026-01-01") for i, tags in enumerate([
+            ("registry:5000/app:1.2", "alias:latest"), ("db:2",), (), ("keep:1",)])}
+        assert matching_ids("^alias:\n^db:2$\n\n", images) == {"0", "1"}
+        assert matching_ids(" ", images) == set()
+>       assert matching_ids(".*", images) == {"0", "1", "2", "3"}
+E       AssertionError: assert {'0', '1', '3'} == {'0', '1', '2', '3'}
+E         
+E         Extra items in the right set:
+E         '2'
+E         Use -v to get more diff
+
+tests/unit/test_whitelist.py:15: AssertionError
+____ test_regex_selects_untagged_none_and_deletes_only_confirmed_id[False] _____
+
+filter_first = False
+
+    @pytest.mark.parametrize("filter_first", [False, True])
+    async def test_regex_selects_untagged_none_and_deletes_only_confirmed_id(filter_first):
+        docker = Inventory()
+        app = WhitelistApp(docker)
+        async with app.run_test(size=(100, 30)) as pilot:
+            app.query_one(TextArea).load_text("^None$")
+            await pilot.pause()
+            if filter_first:
+                await pilot.click("#filter")
+                assert not app.selected
+            await pilot.click("#select")
+>           assert app.selected == {"sha256:c"}
+E           AssertionError: assert set() == {'sha256:c'}
+E             
+E             Extra items in the right set:
+E             'sha256:c'
+E             Use -v to get more diff
+
+tests/integration/test_filter_preview.py:183: AssertionError
+_____ test_regex_selects_untagged_none_and_deletes_only_confirmed_id[True] _____
+
+filter_first = True
+
+    @pytest.mark.parametrize("filter_first", [False, True])
+    async def test_regex_selects_untagged_none_and_deletes_only_confirmed_id(filter_first):
+        docker = Inventory()
+        app = WhitelistApp(docker)
+        async with app.run_test(size=(100, 30)) as pilot:
+            app.query_one(TextArea).load_text("^None$")
+            await pilot.pause()
+            if filter_first:
+                await pilot.click("#filter")
+                assert not app.selected
+            await pilot.click("#select")
+>           assert app.selected == {"sha256:c"}
+E           AssertionError: assert set() == {'sha256:c'}
+E             
+E             Extra items in the right set:
+E             'sha256:c'
+E             Use -v to get more diff
+
+tests/integration/test_filter_preview.py:183: AssertionError
+=========================== short test summary info ============================
+FAILED tests/unit/test_whitelist.py::test_matching_is_or_full_tag_search_and_untagged_matches_none
+FAILED tests/integration/test_filter_preview.py::test_regex_selects_untagged_none_and_deletes_only_confirmed_id[False]
+FAILED tests/integration/test_filter_preview.py::test_regex_selects_untagged_none_and_deletes_only_confirmed_id[True]
+3 failed, 19 deselected in 0.96s

@@ -1,0 +1,203 @@
+FFFFFFF                                                                  [100%]
+=================================== FAILURES ===================================
+______ test_default_tag_order_and_click_headers_toggle_numeric_date_sort _______
+
+    async def test_default_tag_order_and_click_headers_toggle_numeric_date_sort():
+        app = WhitelistApp(Inventory())
+        async with app.run_test(size=(120, 45)) as pilot:
+            table = app.query_one(DataTable)
+>           assert row_ids(table) == ["1", "3", "2", "0"]
+E           AssertionError: assert ['0', '1', '2', '3'] == ['1', '3', '2', '0']
+E             
+E             At index 0 diff: '0' != '1'
+E             Use -v to get more diff
+
+tests/integration/test_whitelist_display.py:28: AssertionError
+______ test_selection_updates_in_place_preserving_rows_cursor_and_scroll _______
+
+    async def test_selection_updates_in_place_preserving_rows_cursor_and_scroll():
+        inventory = Inventory()
+        inventory.snapshot = lambda: {str(i): Image(str(i), (f"app:{i:04}",), 1, "2026-01-01")
+                                      for i in range(500)}
+        app = WhitelistApp(inventory)
+        async with app.run_test(size=(100, 40)) as pilot:
+            table = app.query_one(DataTable)
+            table.focus()
+            table.move_cursor(row=25)
+            await pilot.pause()
+            rows, offset = list(table.ordered_rows), table.scroll_offset
+            with patch.object(table, "clear", wraps=table.clear) as clear:
+                await pilot.press("space")
+>               assert clear.call_count == 0, "selection clears the table and rebuilds every row"
+E               AssertionError: selection clears the table and rebuilds every row
+E               assert 1 == 0
+E                +  where 1 = <MagicMock name='clear' id='139865385540912'>.call_count
+
+tests/integration/test_whitelist_display.py:77: AssertionError
+________________ test_eink_render_contains_only_black_and_white ________________
+
+    async def test_eink_render_contains_only_black_and_white():
+        app = WhitelistApp(Inventory())
+        async with app.run_test(size=(100, 40)) as pilot:
+            for selector in ("#rules", "#images", "#select"):
+                app.query_one(selector).focus()
+                await pilot.hover(selector)
+                await pilot.pause()
+                colors = set()
+                for strip in app.screen._compositor.render_strips():
+                    for segment in strip:
+                        if segment.style:
+                            for color in (segment.style.color, segment.style.bgcolor):
+                                if color and not color.is_default:
+                                    colors.add(color.get_truecolor())
+>               assert colors <= {(0, 0, 0), (255, 255, 255)}, colors
+E               AssertionError: {ColorTriplet(red=0, green=0, blue=0), ColorTriplet(red=7, green=7, blue=7), ColorTriplet(red=76, green=76, blue=76), ColorTriplet(red=204, green=204, blue=204), ColorTriplet(red=255, green=255, blue=255)}
+E               assert {ColorTriplet...55, blue=255)} <= {(0, 0, 0), (255, 255, 255)}
+E                 
+E                 Extra items in the left set:
+E                 ColorTriplet(red=76, green=76, blue=76)
+E                 ColorTriplet(red=7, green=7, blue=7)
+E                 ColorTriplet(red=204, green=204, blue=204)
+
+tests/integration/test_whitelist_display.py:101: AssertionError
+_______ test_table_wheel_at_edge_does_not_move_outer_scroll[False-False] _______
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-860/test_table_wheel_at_edge_does_0')
+legacy = False, bottom = False
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    @pytest.mark.parametrize("bottom", [False, True])
+    async def test_table_wheel_at_edge_does_not_move_outer_scroll(tmp_path, legacy, bottom):
+        app = CleanerApp(tmp_path / "config.yaml", Inventory()) if legacy else WhitelistApp(Inventory())
+        async with app.run_test(size=(100, 24)) as pilot:
+            table = app.query_one(DataTable)
+            outer = app.query_one(VerticalScroll)
+            await pilot.pause()
+            outer.scroll_to(y=5, animate=False, immediate=True)
+            table.scroll_to(y=table.max_scroll_y if bottom else 0, animate=False, immediate=True)
+            await pilot.pause()
+            assert 0 < outer.scroll_y < outer.max_scroll_y
+            before = outer.scroll_offset
+            wheel = events.MouseScrollDown if bottom else events.MouseScrollUp
+            assert await pilot._post_mouse_events([wheel], table, offset=(5, 3))
+            await pilot.pause()
+>           assert outer.scroll_offset == before
+E           AssertionError: assert Offset(x=0, y=3) == Offset(x=0, y=5)
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Differing attributes:
+E             ['y']
+E             
+E             Drill down into differing attribute y:
+E               y: 3 != 5
+E             Use -v to get more diff
+
+tests/integration/test_table_scroll.py:33: AssertionError
+_______ test_table_wheel_at_edge_does_not_move_outer_scroll[False-True] ________
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-860/test_table_wheel_at_edge_does_1')
+legacy = True, bottom = False
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    @pytest.mark.parametrize("bottom", [False, True])
+    async def test_table_wheel_at_edge_does_not_move_outer_scroll(tmp_path, legacy, bottom):
+        app = CleanerApp(tmp_path / "config.yaml", Inventory()) if legacy else WhitelistApp(Inventory())
+        async with app.run_test(size=(100, 24)) as pilot:
+            table = app.query_one(DataTable)
+            outer = app.query_one(VerticalScroll)
+            await pilot.pause()
+            outer.scroll_to(y=5, animate=False, immediate=True)
+            table.scroll_to(y=table.max_scroll_y if bottom else 0, animate=False, immediate=True)
+            await pilot.pause()
+            assert 0 < outer.scroll_y < outer.max_scroll_y
+            before = outer.scroll_offset
+            wheel = events.MouseScrollDown if bottom else events.MouseScrollUp
+            assert await pilot._post_mouse_events([wheel], table, offset=(5, 3))
+            await pilot.pause()
+>           assert outer.scroll_offset == before
+E           AssertionError: assert Offset(x=0, y=3) == Offset(x=0, y=5)
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Differing attributes:
+E             ['y']
+E             
+E             Drill down into differing attribute y:
+E               y: 3 != 5
+E             Use -v to get more diff
+
+tests/integration/test_table_scroll.py:33: AssertionError
+_______ test_table_wheel_at_edge_does_not_move_outer_scroll[True-False] ________
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-860/test_table_wheel_at_edge_does_2')
+legacy = False, bottom = True
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    @pytest.mark.parametrize("bottom", [False, True])
+    async def test_table_wheel_at_edge_does_not_move_outer_scroll(tmp_path, legacy, bottom):
+        app = CleanerApp(tmp_path / "config.yaml", Inventory()) if legacy else WhitelistApp(Inventory())
+        async with app.run_test(size=(100, 24)) as pilot:
+            table = app.query_one(DataTable)
+            outer = app.query_one(VerticalScroll)
+            await pilot.pause()
+            outer.scroll_to(y=5, animate=False, immediate=True)
+            table.scroll_to(y=table.max_scroll_y if bottom else 0, animate=False, immediate=True)
+            await pilot.pause()
+            assert 0 < outer.scroll_y < outer.max_scroll_y
+            before = outer.scroll_offset
+            wheel = events.MouseScrollDown if bottom else events.MouseScrollUp
+            assert await pilot._post_mouse_events([wheel], table, offset=(5, 3))
+            await pilot.pause()
+>           assert outer.scroll_offset == before
+E           AssertionError: assert Offset(x=0, y=6) == Offset(x=0, y=5)
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Differing attributes:
+E             ['y']
+E             
+E             Drill down into differing attribute y:
+E               y: 6 != 5
+E             Use -v to get more diff
+
+tests/integration/test_table_scroll.py:33: AssertionError
+________ test_table_wheel_at_edge_does_not_move_outer_scroll[True-True] ________
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-860/test_table_wheel_at_edge_does_3')
+legacy = True, bottom = True
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    @pytest.mark.parametrize("bottom", [False, True])
+    async def test_table_wheel_at_edge_does_not_move_outer_scroll(tmp_path, legacy, bottom):
+        app = CleanerApp(tmp_path / "config.yaml", Inventory()) if legacy else WhitelistApp(Inventory())
+        async with app.run_test(size=(100, 24)) as pilot:
+            table = app.query_one(DataTable)
+            outer = app.query_one(VerticalScroll)
+            await pilot.pause()
+            outer.scroll_to(y=5, animate=False, immediate=True)
+            table.scroll_to(y=table.max_scroll_y if bottom else 0, animate=False, immediate=True)
+            await pilot.pause()
+            assert 0 < outer.scroll_y < outer.max_scroll_y
+            before = outer.scroll_offset
+            wheel = events.MouseScrollDown if bottom else events.MouseScrollUp
+            assert await pilot._post_mouse_events([wheel], table, offset=(5, 3))
+            await pilot.pause()
+>           assert outer.scroll_offset == before
+E           AssertionError: assert Offset(x=0, y=7) == Offset(x=0, y=5)
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Differing attributes:
+E             ['y']
+E             
+E             Drill down into differing attribute y:
+E               y: 7 != 5
+E             Use -v to get more diff
+
+tests/integration/test_table_scroll.py:33: AssertionError
+=========================== short test summary info ============================
+FAILED tests/integration/test_whitelist_display.py::test_default_tag_order_and_click_headers_toggle_numeric_date_sort
+FAILED tests/integration/test_whitelist_display.py::test_selection_updates_in_place_preserving_rows_cursor_and_scroll
+FAILED tests/integration/test_whitelist_display.py::test_eink_render_contains_only_black_and_white
+FAILED tests/integration/test_table_scroll.py::test_table_wheel_at_edge_does_not_move_outer_scroll[False-False]
+FAILED tests/integration/test_table_scroll.py::test_table_wheel_at_edge_does_not_move_outer_scroll[False-True]
+FAILED tests/integration/test_table_scroll.py::test_table_wheel_at_edge_does_not_move_outer_scroll[True-False]
+FAILED tests/integration/test_table_scroll.py::test_table_wheel_at_edge_does_not_move_outer_scroll[True-True]
+7 failed, 1 deselected in 2.10s

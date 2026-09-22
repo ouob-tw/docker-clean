@@ -1,0 +1,58 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_________ test_delete_keeps_ui_responsive_and_logs_newest_first[False] _________
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-850/test_delete_keeps_ui_responsiv0')
+legacy = False
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    async def test_delete_keeps_ui_responsive_and_logs_newest_first(tmp_path, legacy):
+        docker = SlowDocker()
+        app = CleanerApp(tmp_path / "config.yaml", docker) if legacy else WhitelistApp(docker)
+        async with app.run_test(size=(120, 60)) as pilot:
+            if legacy:
+                await pilot.click("#save")
+            else:
+                app.query_one(TextArea).load_text("app:")
+                await pilot.pause()
+                await pilot.click("#select")
+            await pilot.click("#preview")
+            try:
+                await pilot.click("#confirm")
+                assert await asyncio.to_thread(docker.entered.wait, 1)
+>               assert not docker.finished, "confirmation blocked UI until Docker finished"
+E               AssertionError: confirmation blocked UI until Docker finished
+E               assert not True
+E                +  where True = <test_cleanup_progress.SlowDocker object at 0x7fc02a9f3380>.finished
+
+tests/integration/test_cleanup_progress.py:50: AssertionError
+_________ test_delete_keeps_ui_responsive_and_logs_newest_first[True] __________
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-850/test_delete_keeps_ui_responsiv1')
+legacy = True
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    async def test_delete_keeps_ui_responsive_and_logs_newest_first(tmp_path, legacy):
+        docker = SlowDocker()
+        app = CleanerApp(tmp_path / "config.yaml", docker) if legacy else WhitelistApp(docker)
+        async with app.run_test(size=(120, 60)) as pilot:
+            if legacy:
+                await pilot.click("#save")
+            else:
+                app.query_one(TextArea).load_text("app:")
+                await pilot.pause()
+                await pilot.click("#select")
+            await pilot.click("#preview")
+            try:
+                await pilot.click("#confirm")
+                assert await asyncio.to_thread(docker.entered.wait, 1)
+>               assert not docker.finished, "confirmation blocked UI until Docker finished"
+E               AssertionError: confirmation blocked UI until Docker finished
+E               assert not True
+E                +  where True = <test_cleanup_progress.SlowDocker object at 0x7fc02a2fd810>.finished
+
+tests/integration/test_cleanup_progress.py:50: AssertionError
+=========================== short test summary info ============================
+FAILED tests/integration/test_cleanup_progress.py::test_delete_keeps_ui_responsive_and_logs_newest_first[False]
+FAILED tests/integration/test_cleanup_progress.py::test_delete_keeps_ui_responsive_and_logs_newest_first[True]
+2 failed in 13.28s

@@ -1,0 +1,105 @@
+......FFFFF                                                              [100%]
+=================================== FAILURES ===================================
+_____________ test_double_click_opens_only_one_dialog[False-#help] _____________
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-888/test_double_click_opens_only_o0')
+legacy = False, selector = '#help'
+
+    @pytest.mark.parametrize("legacy, selector", [(False, "#help"), (True, "#help"), (False, "#details")])
+    async def test_double_click_opens_only_one_dialog(tmp_path, legacy, selector):
+        app = CleanerApp(tmp_path / "config.yaml", Inventory()) if legacy else WhitelistApp(Inventory())
+        async with app.run_test(size=(100, 30)) as pilot:
+            await pilot.click(selector, times=2)
+>           assert len(app.screen_stack) == 2
+E           AssertionError: assert 3 == 2
+E            +  where 3 = len([Screen(id='_default'), HelpScreen(), HelpScreen()])
+E            +    where [Screen(id='_default'), HelpScreen(), HelpScreen()] = WhitelistApp(title='Docker Clean — 白名單刪除', classes={'-light-mode', '-theme-e-ink'}, pseudo_classes={'focus', 'light', 'nocolor'}).screen_stack
+
+tests/integration/test_filter_preview.py:148: AssertionError
+_____________ test_double_click_opens_only_one_dialog[True-#help] ______________
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-888/test_double_click_opens_only_o1')
+legacy = True, selector = '#help'
+
+    @pytest.mark.parametrize("legacy, selector", [(False, "#help"), (True, "#help"), (False, "#details")])
+    async def test_double_click_opens_only_one_dialog(tmp_path, legacy, selector):
+        app = CleanerApp(tmp_path / "config.yaml", Inventory()) if legacy else WhitelistApp(Inventory())
+        async with app.run_test(size=(100, 30)) as pilot:
+            await pilot.click(selector, times=2)
+>           assert len(app.screen_stack) == 2
+E           AssertionError: assert 3 == 2
+E            +  where 3 = len([Screen(id='_default'), HelpScreen(), HelpScreen()])
+E            +    where [Screen(id='_default'), HelpScreen(), HelpScreen()] = CleanerApp(title='Docker Clean', classes={'-dark-mode', '-theme-terminal'}, pseudo_classes={'focus', 'nocolor', 'dark', 'ansi'}).screen_stack
+
+tests/integration/test_filter_preview.py:148: AssertionError
+___________ test_double_click_opens_only_one_dialog[False-#details] ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-888/test_double_click_opens_only_o2')
+legacy = False, selector = '#details'
+
+    @pytest.mark.parametrize("legacy, selector", [(False, "#help"), (True, "#help"), (False, "#details")])
+    async def test_double_click_opens_only_one_dialog(tmp_path, legacy, selector):
+        app = CleanerApp(tmp_path / "config.yaml", Inventory()) if legacy else WhitelistApp(Inventory())
+        async with app.run_test(size=(100, 30)) as pilot:
+            await pilot.click(selector, times=2)
+>           assert len(app.screen_stack) == 2
+E           AssertionError: assert 3 == 2
+E            +  where 3 = len([Screen(id='_default'), ImageDetails(), ImageDetails()])
+E            +    where [Screen(id='_default'), ImageDetails(), ImageDetails()] = WhitelistApp(title='Docker Clean — 白名單刪除', classes={'-light-mode', '-theme-e-ink'}, pseudo_classes={'focus', 'light', 'nocolor'}).screen_stack
+
+tests/integration/test_filter_preview.py:148: AssertionError
+________ test_preview_focuses_table_for_immediate_keyboard_deselection _________
+
+    async def test_preview_focuses_table_for_immediate_keyboard_deselection():
+        app = WhitelistApp(Inventory())
+        async with app.run_test(size=(100, 30)) as pilot:
+            table = app.query_one(DataTable)
+            table.focus()
+            await pilot.press("space")
+            await pilot.click("#preview")
+>           assert app.focused is table
+E           AssertionError: assert ActionButton(id='preview', classes='-style-default') is ImageTable(id='images')
+E            +  where ActionButton(id='preview', classes='-style-default') = WhitelistApp(title='Docker Clean — 白名單刪除', classes={'-light-mode', '-theme-e-ink'}, pseudo_classes={'focus', 'light', 'nocolor'}).focused
+
+tests/integration/test_filter_preview.py:160: AssertionError
+__ test_preview_reselection_keeps_references_visible_without_rebuilding_rows ___
+
+    async def test_preview_reselection_keeps_references_visible_without_rebuilding_rows():
+        docker = Inventory()
+        key = "sha256:a"
+        docker.images[key] = replace(docker.images[key], tags=("app:1",),
+                                     references=(Reference("c", "ab", "up"),))
+        app = WhitelistApp(docker)
+        async with app.run_test(size=(100, 30)) as pilot:
+            table = app.query_one(DataTable)
+            table.focus()
+            await pilot.press("space")
+            await pilot.click("#preview")
+            table.focus()
+            await pilot.press("space")
+            await pilot.resize_terminal(101, 30)
+            await pilot.resize_terminal(100, 30)
+            rows, offset = list(table.ordered_rows), table.scroll_offset
+            with patch.object(table, "clear", wraps=table.clear) as clear:
+                await pilot.press("space")
+                assert not clear.called
+            assert table.ordered_rows == rows and table.scroll_offset == offset
+            reason = table.get_cell(key, "reason")
+            width = table.ordered_columns[-1].width
+>           assert table.get_row_height(key) >= len(reason.wrap(app.console, width))
+E           AssertionError: assert 1 >= 2
+E            +  where 1 = get_row_height('sha256:a')
+E            +    where get_row_height = ImageTable(id='images').get_row_height
+E            +  and   2 = len(Lines([<text '強制刪除整個 image；容器：ab ' [] ''>, <text '(up)' [] ''>]))
+E            +    where Lines([<text '強制刪除整個 image；容器：ab ' [] ''>, <text '(up)' [] ''>]) = wrap(<console width=80 ColorSystem.TRUECOLOR>, 29)
+E            +      where wrap = <text '強制刪除整個 image；容器：ab (up)' [] ''>.wrap
+E            +      and   <console width=80 ColorSystem.TRUECOLOR> = WhitelistApp(title='Docker Clean — 白名單刪除', classes={'-light-mode', '-theme-e-ink'}, pseudo_classes={'focus', 'light', 'nocolor'}).console
+
+tests/integration/test_filter_preview.py:187: AssertionError
+=========================== short test summary info ============================
+FAILED tests/integration/test_filter_preview.py::test_double_click_opens_only_one_dialog[False-#help]
+FAILED tests/integration/test_filter_preview.py::test_double_click_opens_only_one_dialog[True-#help]
+FAILED tests/integration/test_filter_preview.py::test_double_click_opens_only_one_dialog[False-#details]
+FAILED tests/integration/test_filter_preview.py::test_preview_focuses_table_for_immediate_keyboard_deselection
+FAILED tests/integration/test_filter_preview.py::test_preview_reselection_keeps_references_visible_without_rebuilding_rows
+5 failed, 6 passed in 6.58s

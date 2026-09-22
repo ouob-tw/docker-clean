@@ -1,0 +1,740 @@
+....FF..FFFF..FFFF..FFFF..FF                                             [100%]
+=================================== FAILURES ===================================
+____ test_all_inner_scroll_regions_contain_wheel[False-False-#rules-False] _____
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-866/test_all_inner_scroll_regions_0')
+legacy = False, selector = '#rules', bottom = False, overflow = False
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    @pytest.mark.parametrize("selector", ["#rules", "#images", "#cleanup-log"])
+    @pytest.mark.parametrize("bottom", [False, True])
+    @pytest.mark.parametrize("overflow", [False, True])
+    async def test_all_inner_scroll_regions_contain_wheel(tmp_path, legacy, selector, bottom, overflow):
+        inventory = Inventory()
+        if not overflow:
+            inventory.snapshot = lambda: {}
+        app = CleanerApp(tmp_path / "config.yaml", inventory) if legacy else WhitelistApp(inventory)
+        async with app.run_test(size=(100, 24)) as pilot:
+            app.query_one(TextArea).load_text("\n".join(f"app:{i}" for i in range(40)) if overflow else "")
+            await pilot.pause()
+            app.cleanup.display = True
+            log = app.query_one("#cleanup-log", VerticalScroll)
+            await log.mount(Static("\n".join(f"line {i}" for i in range(40)) if overflow else "empty"))
+            app.query_one("#output", Static).update("\n".join(["outer content"] * 40))
+            await pilot.pause()
+            inner = app.query_one(selector)
+            outer = app.query_one(VerticalScroll)
+            outer.scroll_to(y=max(1, inner.region.y - 4), animate=False, immediate=True)
+            inner.scroll_to(y=inner.max_scroll_y if bottom else 0, animate=False, immediate=True)
+            await pilot.pause()
+            assert 0 < outer.scroll_y < outer.max_scroll_y
+            before = outer.scroll_offset
+            wheel = events.MouseScrollDown if bottom else events.MouseScrollUp
+            # Route via the screen: log events originate on a child Static, not the container.
+            await pilot._post_mouse_events([wheel], inner, offset=(3, 2))
+            await pilot.pause()
+>           assert outer.scroll_offset == before
+E           AssertionError: assert Offset(x=0, y=0) == Offset(x=0, y=1)
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Differing attributes:
+E             ['y']
+E             
+E             Drill down into differing attribute y:
+E               y: 0 != 1
+E             Use -v to get more diff
+
+tests/integration/test_table_scroll.py:70: AssertionError
+_____ test_all_inner_scroll_regions_contain_wheel[False-False-#rules-True] _____
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-866/test_all_inner_scroll_regions_1')
+legacy = True, selector = '#rules', bottom = False, overflow = False
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    @pytest.mark.parametrize("selector", ["#rules", "#images", "#cleanup-log"])
+    @pytest.mark.parametrize("bottom", [False, True])
+    @pytest.mark.parametrize("overflow", [False, True])
+    async def test_all_inner_scroll_regions_contain_wheel(tmp_path, legacy, selector, bottom, overflow):
+        inventory = Inventory()
+        if not overflow:
+            inventory.snapshot = lambda: {}
+        app = CleanerApp(tmp_path / "config.yaml", inventory) if legacy else WhitelistApp(inventory)
+        async with app.run_test(size=(100, 24)) as pilot:
+            app.query_one(TextArea).load_text("\n".join(f"app:{i}" for i in range(40)) if overflow else "")
+            await pilot.pause()
+            app.cleanup.display = True
+            log = app.query_one("#cleanup-log", VerticalScroll)
+            await log.mount(Static("\n".join(f"line {i}" for i in range(40)) if overflow else "empty"))
+            app.query_one("#output", Static).update("\n".join(["outer content"] * 40))
+            await pilot.pause()
+            inner = app.query_one(selector)
+            outer = app.query_one(VerticalScroll)
+            outer.scroll_to(y=max(1, inner.region.y - 4), animate=False, immediate=True)
+            inner.scroll_to(y=inner.max_scroll_y if bottom else 0, animate=False, immediate=True)
+            await pilot.pause()
+            assert 0 < outer.scroll_y < outer.max_scroll_y
+            before = outer.scroll_offset
+            wheel = events.MouseScrollDown if bottom else events.MouseScrollUp
+            # Route via the screen: log events originate on a child Static, not the container.
+            await pilot._post_mouse_events([wheel], inner, offset=(3, 2))
+            await pilot.pause()
+>           assert outer.scroll_offset == before
+E           AssertionError: assert Offset(x=0, y=0) == Offset(x=0, y=1)
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Differing attributes:
+E             ['y']
+E             
+E             Drill down into differing attribute y:
+E               y: 0 != 1
+E             Use -v to get more diff
+
+tests/integration/test_table_scroll.py:70: AssertionError
+_ test_all_inner_scroll_regions_contain_wheel[False-False-#cleanup-log-False] __
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-866/test_all_inner_scroll_regions_4')
+legacy = False, selector = '#cleanup-log', bottom = False, overflow = False
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    @pytest.mark.parametrize("selector", ["#rules", "#images", "#cleanup-log"])
+    @pytest.mark.parametrize("bottom", [False, True])
+    @pytest.mark.parametrize("overflow", [False, True])
+    async def test_all_inner_scroll_regions_contain_wheel(tmp_path, legacy, selector, bottom, overflow):
+        inventory = Inventory()
+        if not overflow:
+            inventory.snapshot = lambda: {}
+        app = CleanerApp(tmp_path / "config.yaml", inventory) if legacy else WhitelistApp(inventory)
+        async with app.run_test(size=(100, 24)) as pilot:
+            app.query_one(TextArea).load_text("\n".join(f"app:{i}" for i in range(40)) if overflow else "")
+            await pilot.pause()
+            app.cleanup.display = True
+            log = app.query_one("#cleanup-log", VerticalScroll)
+            await log.mount(Static("\n".join(f"line {i}" for i in range(40)) if overflow else "empty"))
+            app.query_one("#output", Static).update("\n".join(["outer content"] * 40))
+            await pilot.pause()
+            inner = app.query_one(selector)
+            outer = app.query_one(VerticalScroll)
+            outer.scroll_to(y=max(1, inner.region.y - 4), animate=False, immediate=True)
+            inner.scroll_to(y=inner.max_scroll_y if bottom else 0, animate=False, immediate=True)
+            await pilot.pause()
+            assert 0 < outer.scroll_y < outer.max_scroll_y
+            before = outer.scroll_offset
+            wheel = events.MouseScrollDown if bottom else events.MouseScrollUp
+            # Route via the screen: log events originate on a child Static, not the container.
+            await pilot._post_mouse_events([wheel], inner, offset=(3, 2))
+            await pilot.pause()
+>           assert outer.scroll_offset == before
+E           AssertionError: assert Offset(x=0, y=23) == Offset(x=0, y=25)
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Differing attributes:
+E             ['y']
+E             
+E             Drill down into differing attribute y:
+E               y: 23 != 25
+E             Use -v to get more diff
+
+tests/integration/test_table_scroll.py:70: AssertionError
+__ test_all_inner_scroll_regions_contain_wheel[False-False-#cleanup-log-True] __
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-866/test_all_inner_scroll_regions_5')
+legacy = True, selector = '#cleanup-log', bottom = False, overflow = False
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    @pytest.mark.parametrize("selector", ["#rules", "#images", "#cleanup-log"])
+    @pytest.mark.parametrize("bottom", [False, True])
+    @pytest.mark.parametrize("overflow", [False, True])
+    async def test_all_inner_scroll_regions_contain_wheel(tmp_path, legacy, selector, bottom, overflow):
+        inventory = Inventory()
+        if not overflow:
+            inventory.snapshot = lambda: {}
+        app = CleanerApp(tmp_path / "config.yaml", inventory) if legacy else WhitelistApp(inventory)
+        async with app.run_test(size=(100, 24)) as pilot:
+            app.query_one(TextArea).load_text("\n".join(f"app:{i}" for i in range(40)) if overflow else "")
+            await pilot.pause()
+            app.cleanup.display = True
+            log = app.query_one("#cleanup-log", VerticalScroll)
+            await log.mount(Static("\n".join(f"line {i}" for i in range(40)) if overflow else "empty"))
+            app.query_one("#output", Static).update("\n".join(["outer content"] * 40))
+            await pilot.pause()
+            inner = app.query_one(selector)
+            outer = app.query_one(VerticalScroll)
+            outer.scroll_to(y=max(1, inner.region.y - 4), animate=False, immediate=True)
+            inner.scroll_to(y=inner.max_scroll_y if bottom else 0, animate=False, immediate=True)
+            await pilot.pause()
+            assert 0 < outer.scroll_y < outer.max_scroll_y
+            before = outer.scroll_offset
+            wheel = events.MouseScrollDown if bottom else events.MouseScrollUp
+            # Route via the screen: log events originate on a child Static, not the container.
+            await pilot._post_mouse_events([wheel], inner, offset=(3, 2))
+            await pilot.pause()
+>           assert outer.scroll_offset == before
+E           AssertionError: assert Offset(x=0, y=25) == Offset(x=0, y=27)
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Differing attributes:
+E             ['y']
+E             
+E             Drill down into differing attribute y:
+E               y: 25 != 27
+E             Use -v to get more diff
+
+tests/integration/test_table_scroll.py:70: AssertionError
+_____ test_all_inner_scroll_regions_contain_wheel[False-True-#rules-False] _____
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-866/test_all_inner_scroll_regions_6')
+legacy = False, selector = '#rules', bottom = True, overflow = False
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    @pytest.mark.parametrize("selector", ["#rules", "#images", "#cleanup-log"])
+    @pytest.mark.parametrize("bottom", [False, True])
+    @pytest.mark.parametrize("overflow", [False, True])
+    async def test_all_inner_scroll_regions_contain_wheel(tmp_path, legacy, selector, bottom, overflow):
+        inventory = Inventory()
+        if not overflow:
+            inventory.snapshot = lambda: {}
+        app = CleanerApp(tmp_path / "config.yaml", inventory) if legacy else WhitelistApp(inventory)
+        async with app.run_test(size=(100, 24)) as pilot:
+            app.query_one(TextArea).load_text("\n".join(f"app:{i}" for i in range(40)) if overflow else "")
+            await pilot.pause()
+            app.cleanup.display = True
+            log = app.query_one("#cleanup-log", VerticalScroll)
+            await log.mount(Static("\n".join(f"line {i}" for i in range(40)) if overflow else "empty"))
+            app.query_one("#output", Static).update("\n".join(["outer content"] * 40))
+            await pilot.pause()
+            inner = app.query_one(selector)
+            outer = app.query_one(VerticalScroll)
+            outer.scroll_to(y=max(1, inner.region.y - 4), animate=False, immediate=True)
+            inner.scroll_to(y=inner.max_scroll_y if bottom else 0, animate=False, immediate=True)
+            await pilot.pause()
+            assert 0 < outer.scroll_y < outer.max_scroll_y
+            before = outer.scroll_offset
+            wheel = events.MouseScrollDown if bottom else events.MouseScrollUp
+            # Route via the screen: log events originate on a child Static, not the container.
+            await pilot._post_mouse_events([wheel], inner, offset=(3, 2))
+            await pilot.pause()
+>           assert outer.scroll_offset == before
+E           AssertionError: assert Offset(x=0, y=3) == Offset(x=0, y=1)
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Differing attributes:
+E             ['y']
+E             
+E             Drill down into differing attribute y:
+E               y: 3 != 1
+E             Use -v to get more diff
+
+tests/integration/test_table_scroll.py:70: AssertionError
+_____ test_all_inner_scroll_regions_contain_wheel[False-True-#rules-True] ______
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-866/test_all_inner_scroll_regions_7')
+legacy = True, selector = '#rules', bottom = True, overflow = False
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    @pytest.mark.parametrize("selector", ["#rules", "#images", "#cleanup-log"])
+    @pytest.mark.parametrize("bottom", [False, True])
+    @pytest.mark.parametrize("overflow", [False, True])
+    async def test_all_inner_scroll_regions_contain_wheel(tmp_path, legacy, selector, bottom, overflow):
+        inventory = Inventory()
+        if not overflow:
+            inventory.snapshot = lambda: {}
+        app = CleanerApp(tmp_path / "config.yaml", inventory) if legacy else WhitelistApp(inventory)
+        async with app.run_test(size=(100, 24)) as pilot:
+            app.query_one(TextArea).load_text("\n".join(f"app:{i}" for i in range(40)) if overflow else "")
+            await pilot.pause()
+            app.cleanup.display = True
+            log = app.query_one("#cleanup-log", VerticalScroll)
+            await log.mount(Static("\n".join(f"line {i}" for i in range(40)) if overflow else "empty"))
+            app.query_one("#output", Static).update("\n".join(["outer content"] * 40))
+            await pilot.pause()
+            inner = app.query_one(selector)
+            outer = app.query_one(VerticalScroll)
+            outer.scroll_to(y=max(1, inner.region.y - 4), animate=False, immediate=True)
+            inner.scroll_to(y=inner.max_scroll_y if bottom else 0, animate=False, immediate=True)
+            await pilot.pause()
+            assert 0 < outer.scroll_y < outer.max_scroll_y
+            before = outer.scroll_offset
+            wheel = events.MouseScrollDown if bottom else events.MouseScrollUp
+            # Route via the screen: log events originate on a child Static, not the container.
+            await pilot._post_mouse_events([wheel], inner, offset=(3, 2))
+            await pilot.pause()
+>           assert outer.scroll_offset == before
+E           AssertionError: assert Offset(x=0, y=3) == Offset(x=0, y=1)
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Differing attributes:
+E             ['y']
+E             
+E             Drill down into differing attribute y:
+E               y: 3 != 1
+E             Use -v to get more diff
+
+tests/integration/test_table_scroll.py:70: AssertionError
+__ test_all_inner_scroll_regions_contain_wheel[False-True-#cleanup-log-False] __
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-866/test_all_inner_scroll_regions_10')
+legacy = False, selector = '#cleanup-log', bottom = True, overflow = False
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    @pytest.mark.parametrize("selector", ["#rules", "#images", "#cleanup-log"])
+    @pytest.mark.parametrize("bottom", [False, True])
+    @pytest.mark.parametrize("overflow", [False, True])
+    async def test_all_inner_scroll_regions_contain_wheel(tmp_path, legacy, selector, bottom, overflow):
+        inventory = Inventory()
+        if not overflow:
+            inventory.snapshot = lambda: {}
+        app = CleanerApp(tmp_path / "config.yaml", inventory) if legacy else WhitelistApp(inventory)
+        async with app.run_test(size=(100, 24)) as pilot:
+            app.query_one(TextArea).load_text("\n".join(f"app:{i}" for i in range(40)) if overflow else "")
+            await pilot.pause()
+            app.cleanup.display = True
+            log = app.query_one("#cleanup-log", VerticalScroll)
+            await log.mount(Static("\n".join(f"line {i}" for i in range(40)) if overflow else "empty"))
+            app.query_one("#output", Static).update("\n".join(["outer content"] * 40))
+            await pilot.pause()
+            inner = app.query_one(selector)
+            outer = app.query_one(VerticalScroll)
+            outer.scroll_to(y=max(1, inner.region.y - 4), animate=False, immediate=True)
+            inner.scroll_to(y=inner.max_scroll_y if bottom else 0, animate=False, immediate=True)
+            await pilot.pause()
+            assert 0 < outer.scroll_y < outer.max_scroll_y
+            before = outer.scroll_offset
+            wheel = events.MouseScrollDown if bottom else events.MouseScrollUp
+            # Route via the screen: log events originate on a child Static, not the container.
+            await pilot._post_mouse_events([wheel], inner, offset=(3, 2))
+            await pilot.pause()
+>           assert outer.scroll_offset == before
+E           AssertionError: assert Offset(x=0, y=27) == Offset(x=0, y=25)
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Differing attributes:
+E             ['y']
+E             
+E             Drill down into differing attribute y:
+E               y: 27 != 25
+E             Use -v to get more diff
+
+tests/integration/test_table_scroll.py:70: AssertionError
+__ test_all_inner_scroll_regions_contain_wheel[False-True-#cleanup-log-True] ___
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-866/test_all_inner_scroll_regions_11')
+legacy = True, selector = '#cleanup-log', bottom = True, overflow = False
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    @pytest.mark.parametrize("selector", ["#rules", "#images", "#cleanup-log"])
+    @pytest.mark.parametrize("bottom", [False, True])
+    @pytest.mark.parametrize("overflow", [False, True])
+    async def test_all_inner_scroll_regions_contain_wheel(tmp_path, legacy, selector, bottom, overflow):
+        inventory = Inventory()
+        if not overflow:
+            inventory.snapshot = lambda: {}
+        app = CleanerApp(tmp_path / "config.yaml", inventory) if legacy else WhitelistApp(inventory)
+        async with app.run_test(size=(100, 24)) as pilot:
+            app.query_one(TextArea).load_text("\n".join(f"app:{i}" for i in range(40)) if overflow else "")
+            await pilot.pause()
+            app.cleanup.display = True
+            log = app.query_one("#cleanup-log", VerticalScroll)
+            await log.mount(Static("\n".join(f"line {i}" for i in range(40)) if overflow else "empty"))
+            app.query_one("#output", Static).update("\n".join(["outer content"] * 40))
+            await pilot.pause()
+            inner = app.query_one(selector)
+            outer = app.query_one(VerticalScroll)
+            outer.scroll_to(y=max(1, inner.region.y - 4), animate=False, immediate=True)
+            inner.scroll_to(y=inner.max_scroll_y if bottom else 0, animate=False, immediate=True)
+            await pilot.pause()
+            assert 0 < outer.scroll_y < outer.max_scroll_y
+            before = outer.scroll_offset
+            wheel = events.MouseScrollDown if bottom else events.MouseScrollUp
+            # Route via the screen: log events originate on a child Static, not the container.
+            await pilot._post_mouse_events([wheel], inner, offset=(3, 2))
+            await pilot.pause()
+>           assert outer.scroll_offset == before
+E           AssertionError: assert Offset(x=0, y=29) == Offset(x=0, y=27)
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Differing attributes:
+E             ['y']
+E             
+E             Drill down into differing attribute y:
+E               y: 29 != 27
+E             Use -v to get more diff
+
+tests/integration/test_table_scroll.py:70: AssertionError
+_____ test_all_inner_scroll_regions_contain_wheel[True-False-#rules-False] _____
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-866/test_all_inner_scroll_regions_12')
+legacy = False, selector = '#rules', bottom = False, overflow = True
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    @pytest.mark.parametrize("selector", ["#rules", "#images", "#cleanup-log"])
+    @pytest.mark.parametrize("bottom", [False, True])
+    @pytest.mark.parametrize("overflow", [False, True])
+    async def test_all_inner_scroll_regions_contain_wheel(tmp_path, legacy, selector, bottom, overflow):
+        inventory = Inventory()
+        if not overflow:
+            inventory.snapshot = lambda: {}
+        app = CleanerApp(tmp_path / "config.yaml", inventory) if legacy else WhitelistApp(inventory)
+        async with app.run_test(size=(100, 24)) as pilot:
+            app.query_one(TextArea).load_text("\n".join(f"app:{i}" for i in range(40)) if overflow else "")
+            await pilot.pause()
+            app.cleanup.display = True
+            log = app.query_one("#cleanup-log", VerticalScroll)
+            await log.mount(Static("\n".join(f"line {i}" for i in range(40)) if overflow else "empty"))
+            app.query_one("#output", Static).update("\n".join(["outer content"] * 40))
+            await pilot.pause()
+            inner = app.query_one(selector)
+            outer = app.query_one(VerticalScroll)
+            outer.scroll_to(y=max(1, inner.region.y - 4), animate=False, immediate=True)
+            inner.scroll_to(y=inner.max_scroll_y if bottom else 0, animate=False, immediate=True)
+            await pilot.pause()
+            assert 0 < outer.scroll_y < outer.max_scroll_y
+            before = outer.scroll_offset
+            wheel = events.MouseScrollDown if bottom else events.MouseScrollUp
+            # Route via the screen: log events originate on a child Static, not the container.
+            await pilot._post_mouse_events([wheel], inner, offset=(3, 2))
+            await pilot.pause()
+>           assert outer.scroll_offset == before
+E           AssertionError: assert Offset(x=0, y=0) == Offset(x=0, y=1)
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Differing attributes:
+E             ['y']
+E             
+E             Drill down into differing attribute y:
+E               y: 0 != 1
+E             Use -v to get more diff
+
+tests/integration/test_table_scroll.py:70: AssertionError
+_____ test_all_inner_scroll_regions_contain_wheel[True-False-#rules-True] ______
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-866/test_all_inner_scroll_regions_13')
+legacy = True, selector = '#rules', bottom = False, overflow = True
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    @pytest.mark.parametrize("selector", ["#rules", "#images", "#cleanup-log"])
+    @pytest.mark.parametrize("bottom", [False, True])
+    @pytest.mark.parametrize("overflow", [False, True])
+    async def test_all_inner_scroll_regions_contain_wheel(tmp_path, legacy, selector, bottom, overflow):
+        inventory = Inventory()
+        if not overflow:
+            inventory.snapshot = lambda: {}
+        app = CleanerApp(tmp_path / "config.yaml", inventory) if legacy else WhitelistApp(inventory)
+        async with app.run_test(size=(100, 24)) as pilot:
+            app.query_one(TextArea).load_text("\n".join(f"app:{i}" for i in range(40)) if overflow else "")
+            await pilot.pause()
+            app.cleanup.display = True
+            log = app.query_one("#cleanup-log", VerticalScroll)
+            await log.mount(Static("\n".join(f"line {i}" for i in range(40)) if overflow else "empty"))
+            app.query_one("#output", Static).update("\n".join(["outer content"] * 40))
+            await pilot.pause()
+            inner = app.query_one(selector)
+            outer = app.query_one(VerticalScroll)
+            outer.scroll_to(y=max(1, inner.region.y - 4), animate=False, immediate=True)
+            inner.scroll_to(y=inner.max_scroll_y if bottom else 0, animate=False, immediate=True)
+            await pilot.pause()
+            assert 0 < outer.scroll_y < outer.max_scroll_y
+            before = outer.scroll_offset
+            wheel = events.MouseScrollDown if bottom else events.MouseScrollUp
+            # Route via the screen: log events originate on a child Static, not the container.
+            await pilot._post_mouse_events([wheel], inner, offset=(3, 2))
+            await pilot.pause()
+>           assert outer.scroll_offset == before
+E           AssertionError: assert Offset(x=0, y=0) == Offset(x=0, y=1)
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Differing attributes:
+E             ['y']
+E             
+E             Drill down into differing attribute y:
+E               y: 0 != 1
+E             Use -v to get more diff
+
+tests/integration/test_table_scroll.py:70: AssertionError
+__ test_all_inner_scroll_regions_contain_wheel[True-False-#cleanup-log-False] __
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-866/test_all_inner_scroll_regions_16')
+legacy = False, selector = '#cleanup-log', bottom = False, overflow = True
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    @pytest.mark.parametrize("selector", ["#rules", "#images", "#cleanup-log"])
+    @pytest.mark.parametrize("bottom", [False, True])
+    @pytest.mark.parametrize("overflow", [False, True])
+    async def test_all_inner_scroll_regions_contain_wheel(tmp_path, legacy, selector, bottom, overflow):
+        inventory = Inventory()
+        if not overflow:
+            inventory.snapshot = lambda: {}
+        app = CleanerApp(tmp_path / "config.yaml", inventory) if legacy else WhitelistApp(inventory)
+        async with app.run_test(size=(100, 24)) as pilot:
+            app.query_one(TextArea).load_text("\n".join(f"app:{i}" for i in range(40)) if overflow else "")
+            await pilot.pause()
+            app.cleanup.display = True
+            log = app.query_one("#cleanup-log", VerticalScroll)
+            await log.mount(Static("\n".join(f"line {i}" for i in range(40)) if overflow else "empty"))
+            app.query_one("#output", Static).update("\n".join(["outer content"] * 40))
+            await pilot.pause()
+            inner = app.query_one(selector)
+            outer = app.query_one(VerticalScroll)
+            outer.scroll_to(y=max(1, inner.region.y - 4), animate=False, immediate=True)
+            inner.scroll_to(y=inner.max_scroll_y if bottom else 0, animate=False, immediate=True)
+            await pilot.pause()
+            assert 0 < outer.scroll_y < outer.max_scroll_y
+            before = outer.scroll_offset
+            wheel = events.MouseScrollDown if bottom else events.MouseScrollUp
+            # Route via the screen: log events originate on a child Static, not the container.
+            await pilot._post_mouse_events([wheel], inner, offset=(3, 2))
+            await pilot.pause()
+>           assert outer.scroll_offset == before
+E           AssertionError: assert Offset(x=0, y=23) == Offset(x=0, y=25)
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Differing attributes:
+E             ['y']
+E             
+E             Drill down into differing attribute y:
+E               y: 23 != 25
+E             Use -v to get more diff
+
+tests/integration/test_table_scroll.py:70: AssertionError
+__ test_all_inner_scroll_regions_contain_wheel[True-False-#cleanup-log-True] ___
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-866/test_all_inner_scroll_regions_17')
+legacy = True, selector = '#cleanup-log', bottom = False, overflow = True
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    @pytest.mark.parametrize("selector", ["#rules", "#images", "#cleanup-log"])
+    @pytest.mark.parametrize("bottom", [False, True])
+    @pytest.mark.parametrize("overflow", [False, True])
+    async def test_all_inner_scroll_regions_contain_wheel(tmp_path, legacy, selector, bottom, overflow):
+        inventory = Inventory()
+        if not overflow:
+            inventory.snapshot = lambda: {}
+        app = CleanerApp(tmp_path / "config.yaml", inventory) if legacy else WhitelistApp(inventory)
+        async with app.run_test(size=(100, 24)) as pilot:
+            app.query_one(TextArea).load_text("\n".join(f"app:{i}" for i in range(40)) if overflow else "")
+            await pilot.pause()
+            app.cleanup.display = True
+            log = app.query_one("#cleanup-log", VerticalScroll)
+            await log.mount(Static("\n".join(f"line {i}" for i in range(40)) if overflow else "empty"))
+            app.query_one("#output", Static).update("\n".join(["outer content"] * 40))
+            await pilot.pause()
+            inner = app.query_one(selector)
+            outer = app.query_one(VerticalScroll)
+            outer.scroll_to(y=max(1, inner.region.y - 4), animate=False, immediate=True)
+            inner.scroll_to(y=inner.max_scroll_y if bottom else 0, animate=False, immediate=True)
+            await pilot.pause()
+            assert 0 < outer.scroll_y < outer.max_scroll_y
+            before = outer.scroll_offset
+            wheel = events.MouseScrollDown if bottom else events.MouseScrollUp
+            # Route via the screen: log events originate on a child Static, not the container.
+            await pilot._post_mouse_events([wheel], inner, offset=(3, 2))
+            await pilot.pause()
+>           assert outer.scroll_offset == before
+E           AssertionError: assert Offset(x=0, y=25) == Offset(x=0, y=27)
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Differing attributes:
+E             ['y']
+E             
+E             Drill down into differing attribute y:
+E               y: 25 != 27
+E             Use -v to get more diff
+
+tests/integration/test_table_scroll.py:70: AssertionError
+_____ test_all_inner_scroll_regions_contain_wheel[True-True-#rules-False] ______
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-866/test_all_inner_scroll_regions_18')
+legacy = False, selector = '#rules', bottom = True, overflow = True
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    @pytest.mark.parametrize("selector", ["#rules", "#images", "#cleanup-log"])
+    @pytest.mark.parametrize("bottom", [False, True])
+    @pytest.mark.parametrize("overflow", [False, True])
+    async def test_all_inner_scroll_regions_contain_wheel(tmp_path, legacy, selector, bottom, overflow):
+        inventory = Inventory()
+        if not overflow:
+            inventory.snapshot = lambda: {}
+        app = CleanerApp(tmp_path / "config.yaml", inventory) if legacy else WhitelistApp(inventory)
+        async with app.run_test(size=(100, 24)) as pilot:
+            app.query_one(TextArea).load_text("\n".join(f"app:{i}" for i in range(40)) if overflow else "")
+            await pilot.pause()
+            app.cleanup.display = True
+            log = app.query_one("#cleanup-log", VerticalScroll)
+            await log.mount(Static("\n".join(f"line {i}" for i in range(40)) if overflow else "empty"))
+            app.query_one("#output", Static).update("\n".join(["outer content"] * 40))
+            await pilot.pause()
+            inner = app.query_one(selector)
+            outer = app.query_one(VerticalScroll)
+            outer.scroll_to(y=max(1, inner.region.y - 4), animate=False, immediate=True)
+            inner.scroll_to(y=inner.max_scroll_y if bottom else 0, animate=False, immediate=True)
+            await pilot.pause()
+            assert 0 < outer.scroll_y < outer.max_scroll_y
+            before = outer.scroll_offset
+            wheel = events.MouseScrollDown if bottom else events.MouseScrollUp
+            # Route via the screen: log events originate on a child Static, not the container.
+            await pilot._post_mouse_events([wheel], inner, offset=(3, 2))
+            await pilot.pause()
+>           assert outer.scroll_offset == before
+E           AssertionError: assert Offset(x=0, y=3) == Offset(x=0, y=1)
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Differing attributes:
+E             ['y']
+E             
+E             Drill down into differing attribute y:
+E               y: 3 != 1
+E             Use -v to get more diff
+
+tests/integration/test_table_scroll.py:70: AssertionError
+______ test_all_inner_scroll_regions_contain_wheel[True-True-#rules-True] ______
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-866/test_all_inner_scroll_regions_19')
+legacy = True, selector = '#rules', bottom = True, overflow = True
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    @pytest.mark.parametrize("selector", ["#rules", "#images", "#cleanup-log"])
+    @pytest.mark.parametrize("bottom", [False, True])
+    @pytest.mark.parametrize("overflow", [False, True])
+    async def test_all_inner_scroll_regions_contain_wheel(tmp_path, legacy, selector, bottom, overflow):
+        inventory = Inventory()
+        if not overflow:
+            inventory.snapshot = lambda: {}
+        app = CleanerApp(tmp_path / "config.yaml", inventory) if legacy else WhitelistApp(inventory)
+        async with app.run_test(size=(100, 24)) as pilot:
+            app.query_one(TextArea).load_text("\n".join(f"app:{i}" for i in range(40)) if overflow else "")
+            await pilot.pause()
+            app.cleanup.display = True
+            log = app.query_one("#cleanup-log", VerticalScroll)
+            await log.mount(Static("\n".join(f"line {i}" for i in range(40)) if overflow else "empty"))
+            app.query_one("#output", Static).update("\n".join(["outer content"] * 40))
+            await pilot.pause()
+            inner = app.query_one(selector)
+            outer = app.query_one(VerticalScroll)
+            outer.scroll_to(y=max(1, inner.region.y - 4), animate=False, immediate=True)
+            inner.scroll_to(y=inner.max_scroll_y if bottom else 0, animate=False, immediate=True)
+            await pilot.pause()
+            assert 0 < outer.scroll_y < outer.max_scroll_y
+            before = outer.scroll_offset
+            wheel = events.MouseScrollDown if bottom else events.MouseScrollUp
+            # Route via the screen: log events originate on a child Static, not the container.
+            await pilot._post_mouse_events([wheel], inner, offset=(3, 2))
+            await pilot.pause()
+>           assert outer.scroll_offset == before
+E           AssertionError: assert Offset(x=0, y=3) == Offset(x=0, y=1)
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Differing attributes:
+E             ['y']
+E             
+E             Drill down into differing attribute y:
+E               y: 3 != 1
+E             Use -v to get more diff
+
+tests/integration/test_table_scroll.py:70: AssertionError
+__ test_all_inner_scroll_regions_contain_wheel[True-True-#cleanup-log-False] ___
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-866/test_all_inner_scroll_regions_22')
+legacy = False, selector = '#cleanup-log', bottom = True, overflow = True
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    @pytest.mark.parametrize("selector", ["#rules", "#images", "#cleanup-log"])
+    @pytest.mark.parametrize("bottom", [False, True])
+    @pytest.mark.parametrize("overflow", [False, True])
+    async def test_all_inner_scroll_regions_contain_wheel(tmp_path, legacy, selector, bottom, overflow):
+        inventory = Inventory()
+        if not overflow:
+            inventory.snapshot = lambda: {}
+        app = CleanerApp(tmp_path / "config.yaml", inventory) if legacy else WhitelistApp(inventory)
+        async with app.run_test(size=(100, 24)) as pilot:
+            app.query_one(TextArea).load_text("\n".join(f"app:{i}" for i in range(40)) if overflow else "")
+            await pilot.pause()
+            app.cleanup.display = True
+            log = app.query_one("#cleanup-log", VerticalScroll)
+            await log.mount(Static("\n".join(f"line {i}" for i in range(40)) if overflow else "empty"))
+            app.query_one("#output", Static).update("\n".join(["outer content"] * 40))
+            await pilot.pause()
+            inner = app.query_one(selector)
+            outer = app.query_one(VerticalScroll)
+            outer.scroll_to(y=max(1, inner.region.y - 4), animate=False, immediate=True)
+            inner.scroll_to(y=inner.max_scroll_y if bottom else 0, animate=False, immediate=True)
+            await pilot.pause()
+            assert 0 < outer.scroll_y < outer.max_scroll_y
+            before = outer.scroll_offset
+            wheel = events.MouseScrollDown if bottom else events.MouseScrollUp
+            # Route via the screen: log events originate on a child Static, not the container.
+            await pilot._post_mouse_events([wheel], inner, offset=(3, 2))
+            await pilot.pause()
+>           assert outer.scroll_offset == before
+E           AssertionError: assert Offset(x=0, y=27) == Offset(x=0, y=25)
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Differing attributes:
+E             ['y']
+E             
+E             Drill down into differing attribute y:
+E               y: 27 != 25
+E             Use -v to get more diff
+
+tests/integration/test_table_scroll.py:70: AssertionError
+___ test_all_inner_scroll_regions_contain_wheel[True-True-#cleanup-log-True] ___
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-866/test_all_inner_scroll_regions_23')
+legacy = True, selector = '#cleanup-log', bottom = True, overflow = True
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    @pytest.mark.parametrize("selector", ["#rules", "#images", "#cleanup-log"])
+    @pytest.mark.parametrize("bottom", [False, True])
+    @pytest.mark.parametrize("overflow", [False, True])
+    async def test_all_inner_scroll_regions_contain_wheel(tmp_path, legacy, selector, bottom, overflow):
+        inventory = Inventory()
+        if not overflow:
+            inventory.snapshot = lambda: {}
+        app = CleanerApp(tmp_path / "config.yaml", inventory) if legacy else WhitelistApp(inventory)
+        async with app.run_test(size=(100, 24)) as pilot:
+            app.query_one(TextArea).load_text("\n".join(f"app:{i}" for i in range(40)) if overflow else "")
+            await pilot.pause()
+            app.cleanup.display = True
+            log = app.query_one("#cleanup-log", VerticalScroll)
+            await log.mount(Static("\n".join(f"line {i}" for i in range(40)) if overflow else "empty"))
+            app.query_one("#output", Static).update("\n".join(["outer content"] * 40))
+            await pilot.pause()
+            inner = app.query_one(selector)
+            outer = app.query_one(VerticalScroll)
+            outer.scroll_to(y=max(1, inner.region.y - 4), animate=False, immediate=True)
+            inner.scroll_to(y=inner.max_scroll_y if bottom else 0, animate=False, immediate=True)
+            await pilot.pause()
+            assert 0 < outer.scroll_y < outer.max_scroll_y
+            before = outer.scroll_offset
+            wheel = events.MouseScrollDown if bottom else events.MouseScrollUp
+            # Route via the screen: log events originate on a child Static, not the container.
+            await pilot._post_mouse_events([wheel], inner, offset=(3, 2))
+            await pilot.pause()
+>           assert outer.scroll_offset == before
+E           AssertionError: assert Offset(x=0, y=29) == Offset(x=0, y=27)
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Differing attributes:
+E             ['y']
+E             
+E             Drill down into differing attribute y:
+E               y: 29 != 27
+E             Use -v to get more diff
+
+tests/integration/test_table_scroll.py:70: AssertionError
+=========================== short test summary info ============================
+FAILED tests/integration/test_table_scroll.py::test_all_inner_scroll_regions_contain_wheel[False-False-#rules-False]
+FAILED tests/integration/test_table_scroll.py::test_all_inner_scroll_regions_contain_wheel[False-False-#rules-True]
+FAILED tests/integration/test_table_scroll.py::test_all_inner_scroll_regions_contain_wheel[False-False-#cleanup-log-False]
+FAILED tests/integration/test_table_scroll.py::test_all_inner_scroll_regions_contain_wheel[False-False-#cleanup-log-True]
+FAILED tests/integration/test_table_scroll.py::test_all_inner_scroll_regions_contain_wheel[False-True-#rules-False]
+FAILED tests/integration/test_table_scroll.py::test_all_inner_scroll_regions_contain_wheel[False-True-#rules-True]
+FAILED tests/integration/test_table_scroll.py::test_all_inner_scroll_regions_contain_wheel[False-True-#cleanup-log-False]
+FAILED tests/integration/test_table_scroll.py::test_all_inner_scroll_regions_contain_wheel[False-True-#cleanup-log-True]
+FAILED tests/integration/test_table_scroll.py::test_all_inner_scroll_regions_contain_wheel[True-False-#rules-False]
+FAILED tests/integration/test_table_scroll.py::test_all_inner_scroll_regions_contain_wheel[True-False-#rules-True]
+FAILED tests/integration/test_table_scroll.py::test_all_inner_scroll_regions_contain_wheel[True-False-#cleanup-log-False]
+FAILED tests/integration/test_table_scroll.py::test_all_inner_scroll_regions_contain_wheel[True-False-#cleanup-log-True]
+FAILED tests/integration/test_table_scroll.py::test_all_inner_scroll_regions_contain_wheel[True-True-#rules-False]
+FAILED tests/integration/test_table_scroll.py::test_all_inner_scroll_regions_contain_wheel[True-True-#rules-True]
+FAILED tests/integration/test_table_scroll.py::test_all_inner_scroll_regions_contain_wheel[True-True-#cleanup-log-False]
+FAILED tests/integration/test_table_scroll.py::test_all_inner_scroll_regions_contain_wheel[True-True-#cleanup-log-True]
+16 failed, 12 passed in 9.59s

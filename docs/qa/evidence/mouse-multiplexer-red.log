@@ -1,0 +1,76 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_multiplexer_cell_click_selects_row_instead_of_opening_palette ______
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-822/test_multiplexer_cell_click_se0')
+
+    def test_multiplexer_cell_click_selects_row_instead_of_opening_palette(tmp_path):
+        state = tmp_path / "state.json"
+        code = '''
+    import json, sys
+    from pathlib import Path
+    from docker_clean import cli
+    from docker_clean import tui
+    from docker_clean.engine import Image
+    class Engine:
+        def snapshot(self):
+            return {"sha256:a": Image("sha256:a", ("example:1",), 100, "2026-09-21T00:00:00Z")}
+    class Probe(tui.CleanerApp):
+        def __init__(self, path): super().__init__(path, Engine())
+        def on_mount(self):
+            super().on_mount()
+            self.set_interval(0.05, self.report)
+        def report(self):
+            Path(sys.argv[-1] + ".state").write_text(json.dumps({
+                "selected": sorted(self.selected), "screens": [type(s).__name__ for s in self.screen_stack]}))
+    tui.CleanerApp = Probe
+    raise SystemExit(cli.main())
+    '''
+        config = tmp_path / "config.yaml"
+        state = config.with_name(config.name + ".state")
+        master, slave = pty.openpty()
+        fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 24, 85, 595, 528))
+        process = subprocess.Popen(
+            [sys.executable, "-c", code, "tui", "--config", str(config)],
+            stdin=slave, stdout=slave, stderr=slave,
+            env={**os.environ, "TERM": "xterm-256color", "TEXTUAL_SMOOTH_SCROLL": "1"},
+        )
+        os.close(slave)
+        output = b""
+        replied = resized = clicked = False
+        observed = {}
+        try:
+            deadline = time.monotonic() + 10
+            while time.monotonic() < deadline:
+                if select.select([master], [], [], 0.05)[0]:
+                    output += os.read(master, 65536)
+                if not replied and b"\x1b[?2048$p" in output:
+                    os.write(master, b"\x1b[?2048;2$y")
+                    replied = True
+                if not resized and b"\x1b[?2048h" in output:
+                    os.write(master, b"\x1b[48;24;85;528;595t")
+                    resized = True
+                if not clicked and b"example:1" in output and state.exists() and replied:
+                    # HERDR 0.9.0 can send cell SGR even after a child requests 1016.
+                    os.write(master, b"\x1b[<0;3;13M\x1b[<0;3;13m")
+                    clicked = True
+                if state.exists():
+                    try:
+                        observed = json.loads(state.read_text())
+                    except json.JSONDecodeError:
+                        continue
+                    if observed.get("selected") or len(observed.get("screens", [])) > 1:
+                        break
+>           assert observed.get("selected") == ["sha256:a"], (observed, output[-500:])
+E           AssertionError: ({'selected': [], 'screens': ['Screen', 'CommandPalette']}, b';49m        \x1b[0m\x1b[39;49m \x1b[0m\r
+E             \x1b[2;1H\x1b[...96\x94\xe2\x96\x94\xe2\x96\x94\xe2\x96\x94\xe2\x96\x94\x1b[0m\x1b[39;49m\xe2\x96\x8e\x1b[0m\x1b[7;39;49m  \x1b[0m\r
+E             ')
+E           assert [] == ['sha256:a']
+E             
+E             Right contains one more item: 'sha256:a'
+E             Use -v to get more diff
+
+tests/integration/test_mouse_protocol.py:71: AssertionError
+=========================== short test summary info ============================
+FAILED tests/integration/test_mouse_protocol.py::test_multiplexer_cell_click_selects_row_instead_of_opening_palette
+1 failed in 5.29s

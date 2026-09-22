@@ -1,0 +1,82 @@
+FF..FF                                                                   [100%]
+=================================== FAILURES ===================================
+___________ test_help_top_right_static_title_and_space_button[False] ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-884/test_help_top_right_static_tit0')
+legacy = False
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    async def test_help_top_right_static_title_and_space_button(tmp_path, legacy):
+        app = CleanerApp(tmp_path / "config.yaml", Inventory()) if legacy else WhitelistApp(Inventory())
+        async with app.run_test(size=(100, 30)) as pilot:
+            help_button = app.query_one("#help", Button)
+>           assert help_button.region.y == 0 and help_button.region.right == 100
+E           AssertionError: assert (0 == 0 and 99 == 100)
+E            +  where 0 = Region(x=87, y=0, width=12, height=1).y
+E            +    where Region(x=87, y=0, width=12, height=1) = ActionButton(id='help', classes='-style-default').region
+E            +  and   99 = Region(x=87, y=0, width=12, height=1).right
+E            +    where Region(x=87, y=0, width=12, height=1) = ActionButton(id='help', classes='-style-default').region
+
+tests/integration/test_filter_preview.py:34: AssertionError
+___________ test_help_top_right_static_title_and_space_button[True] ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-swy/pytest-884/test_help_top_right_static_tit1')
+legacy = True
+
+    @pytest.mark.parametrize("legacy", [False, True])
+    async def test_help_top_right_static_title_and_space_button(tmp_path, legacy):
+        app = CleanerApp(tmp_path / "config.yaml", Inventory()) if legacy else WhitelistApp(Inventory())
+        async with app.run_test(size=(100, 30)) as pilot:
+            help_button = app.query_one("#help", Button)
+>           assert help_button.region.y == 0 and help_button.region.right == 100
+E           AssertionError: assert (0 == 0 and 99 == 100)
+E            +  where 0 = Region(x=87, y=0, width=12, height=1).y
+E            +    where Region(x=87, y=0, width=12, height=1) = ActionButton(id='help', classes='-style-default').region
+E            +  and   99 = Region(x=87, y=0, width=12, height=1).right
+E            +    where Region(x=87, y=0, width=12, height=1) = ActionButton(id='help', classes='-style-default').region
+
+tests/integration/test_filter_preview.py:34: AssertionError
+_______ test_invalid_filter_preserves_view_and_empty_filter_restores_all _______
+
+    async def test_invalid_filter_preserves_view_and_empty_filter_restores_all():
+        app = WhitelistApp(Inventory())
+        async with app.run_test(size=(100, 30)) as pilot:
+            rules = app.query_one(TextArea)
+            table = app.query_one(DataTable)
+            rules.load_text("db:")
+            await pilot.pause()
+            await pilot.click("#filter")
+            assert table.row_count == 1
+            rules.load_text("[")
+            await pilot.pause()
+            await pilot.click("#filter")
+            assert table.row_count == 1
+>           assert "Regex 無效" in str(app.query_one("#status", Static).render())
+E           AssertionError: assert 'Regex 無效' in '顯示 1／3 個 image；共勾選 0 個（不受篩選影響）。'
+E            +  where '顯示 1／3 個 image；共勾選 0 個（不受篩選影響）。' = str(Content('顯示 1／3 個 image；共勾選 0 個（不受篩選影響）。'))
+E            +    where Content('顯示 1／3 個 image；共勾選 0 個（不受篩選影響）。') = render()
+E            +      where render = Static(id='status').render
+E            +        where Static(id='status') = query_one('#status', Static)
+E            +          where query_one = WhitelistApp(title='Docker Clean — 白名單刪除', classes={'-light-mode', '-theme-e-ink'}, pseudo_classes={'focus', 'nocolor', 'light'}).query_one
+
+tests/integration/test_filter_preview.py:111: AssertionError
+______ test_untagged_displays_none_and_can_be_filtered_without_selecting _______
+
+    async def test_untagged_displays_none_and_can_be_filtered_without_selecting():
+        docker = Inventory()
+        app = WhitelistApp(docker)
+        async with app.run_test(size=(100, 30)) as pilot:
+            table = app.query_one(DataTable)
+>           assert str(table.get_cell("sha256:c", "tags")) == "None"
+E           AssertionError: assert '無 tag' == 'None'
+E             
+E             - None
+E             + 無 tag
+
+tests/integration/test_filter_preview.py:123: AssertionError
+=========================== short test summary info ============================
+FAILED tests/integration/test_filter_preview.py::test_help_top_right_static_title_and_space_button[False]
+FAILED tests/integration/test_filter_preview.py::test_help_top_right_static_title_and_space_button[True]
+FAILED tests/integration/test_filter_preview.py::test_invalid_filter_preserves_view_and_empty_filter_restores_all
+FAILED tests/integration/test_filter_preview.py::test_untagged_displays_none_and_can_be_filtered_without_selecting
+4 failed, 2 passed in 2.30s

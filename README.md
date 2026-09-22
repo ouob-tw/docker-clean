@@ -1,6 +1,6 @@
 # Docker Clean
 
-以 Python Regex 保留本機 Docker image；提供 Textual TUI 與每次預覽、確認後才執行的 CLI。僅清理 image／tag，沒有 prune、排程或跳過確認功能。
+提供白名單勾選刪除與既有 Regex 保留流程；每次預覽、確認後才執行。僅清理本機 Docker image／tag，沒有 prune、排程或跳過確認功能。
 
 ## 安裝與使用
 
@@ -8,6 +8,7 @@
 
 ```sh
 uv sync --locked
+uv run docker-clean whitelist
 uv run docker-clean tui
 uv run docker-clean clean
 # 或安裝成日常指令
@@ -15,11 +16,38 @@ uv tool install .
 docker-clean tui
 ```
 
+## 白名單刪除（新流程）
+
+執行 `uv run docker-clean whitelist`。預設使用 E-Ink 白底黑字主題，游標與聚焦按鈕黑白反相，停用按鈕以刪除線區別，避免依賴灰底或淡字。初始不勾選任何 image，不讀寫舊的保留設定；Regex 與勾選只用於本次操作。
+
+1. 上方輸入框每行一條 Python Regex；多條採 OR，使用 `re.search` 比對完整 `repository:tag`。「Regex 篩選」只改變顯示，「Regex 勾選」將命中項目加入勾選。旁邊「顯示全部」解除篩選，保留 Regex 與勾選；未篩選時停用。空白行忽略，清空後篩選也可恢復全部；無效 Regex 保留既有篩選與勾選。
+2. 下方表格用 Space／Enter／點擊增減勾選，也可「清除勾選」。同一 image 任一 tag 命中就勾選整個 image。無 tag 顯示 `None`，可用 `^None$` 篩選或「Regex 勾選」；`.*` 也包含無 tag 項目。`None` 僅用於顯示與比對，不會新增實際 tag。
+3. 按「預覽」，表格顯示全部已勾選 image，不受篩選限制，動作原因包含容器引用。可取消勾選或勾回原項目，確認只刪除仍勾選者。「詳細資料」顯示游標項目的完整 ID、全部 tag 與容器引用。「取消／返回」恢復原篩選清單。修改 Regex 或套用篩選／Regex 勾選後須重新預覽。
+4. 按「確認強制刪除」呼叫 `forceDeleteImage`，逐項執行 `docker image rm --no-prune --force <完整 ID>`。所有 tag 都在刪除範圍內；不停止或刪除容器，Docker 拒絕時如實顯示失敗。
+
+零勾選無法確認。刪除前重新檢查盤點狀態，image／tag／容器引用變動就跳過該項；查詢失敗停止後續刪除，不擴大預覽名單。Ctrl+T 可切換本次主題，Ctrl+Q 離開。
+
+`None` 與實際 tag 使用相同的 `re.search` 規則，因此 `o` 也會命中 `None`；只選無 tag 項目請用 `^None$`。
+
+兩種 TUI 預設依 tag 字母升冪排序，點擊欄位標題切換升冪／降冪。勾選保持當下列位置；若按勾選或動作原因排序，再點標題即可重新排列。主畫面沒有外層捲軸，中央清單或預覽自行捲動，底部操作按鈕固定。輸入框與詳細紀錄的滾輪到達邊界時不會帶動外層，內容不足以捲動時也一樣。
+
+白名單輸入框顯示兩到四行內容，超過後在框內捲動。右上角「使用說明」開啟懸浮視窗，標題不再展開。聚焦按鈕可用 Space／Enter 操作。「刷新」重新取得 Docker 資料。底部操作按鈕與快捷鍵位於同一排，按鈕靠左、Ctrl+Q／Ctrl+P 靠右；Ctrl+T 仍可切換主題。
+
+兩個 TUI 入口都可按 Ctrl+T，搜尋並選擇 `e-ink`。保留規則（`tui`）會保存所選主題，重開後繼續使用；白名單預設為 e-ink，切換只作用於本次。e-ink 在 `NO_COLOR` 環境下仍保留明確的白底黑字。
+
+確認後開啟懸浮視窗，顯示按 image 計算的進度與目前階段，Docker 工作在背景執行緒執行。詳細 log 舊的在上、新的在下，保留原始回報；停在底部時跟進新紀錄，往上閱讀時保留位置。執行期間仍可捲動，背景操作與視窗關閉暫時鎖住；完成後按「返回清單」或 Esc 關閉。查詢中止時會顯示尚未處理的數量，不會顯示假完成。
+
+## 舊版保留規則流程（tui／clean）
+
 預設設定為 `~/.config/docker-clean/config.yaml`，也可在子命令後指定 `--config /path/config.yaml`。設定不存在時只能由 TUI 建立，`clean` 會停止。TUI 每行一條規則，可直接新增、編輯或刪除；選項預設關閉。Enter 或點擊 image 列可勾選，再按「產生規則」把實際 tag 轉成跳脫且有 `^...$` 錨點的 Regex。無 tag 的 image 不產生名稱規則。
 
-儲存後按「預覽」，檢查下方完整內容，再按「確認刪除」；「取消」不操作 Docker。CLI 須輸入完整 `DELETE` 才執行。修改規則或選項會使舊預覽失效。列表依序顯示 tag（長名稱換行）、人類可讀大小、精確到秒的建立日期、動作原因；Space／Enter／點擊可勾選，不跳回第一列。完整 ID 與引用容器保留在下方詳細預覽；Ctrl+Q 離開。
+儲存後按「預覽」，檢查中央的完整內容，再按「確認刪除」；「取消」不操作 Docker。CLI 須輸入完整 `DELETE` 才執行。修改規則或選項會使舊預覽失效。列表依序顯示 tag（長名稱換行）、人類可讀大小、精確到秒的建立日期、動作原因；Space／Enter／點擊可勾選，不跳回第一列。完整 ID 與引用容器保留在詳細預覽；Ctrl+Q 離開。
 
 預設 `theme: terminal` 使用終端原生 ANSI 色盤及預設前景／背景，因此隨終端配色顯示。Ctrl+T 開啟主題選單，切換後自動存入 YAML，下次沿用；選回 `terminal` 可恢復跟隨終端。切換主題只存主題，不順便儲存規則編輯或清理選項。
+
+滑鼠固定使用字元座標，避免 HERDR／zmx 等多工終端路徑將像素模式與字元座標混用、誤開左上角選單。啟動會重設遺留的像素／in-band resize 模式，並停用 Textual 像素平滑捲動；一般滑鼠選取與捲動仍可使用。升級後請退出舊 TUI 再重新啟動。
+
+延遲到達的 in-band 尺寸回報也會忽略，避免重新啟用像素換算或蓋過 PTY 尺寸；正常縮放仍透過 SIGWINCH 更新。兩台終端同時 attach 同一 ZMX session 時仍共用一個畫面尺寸，由最後輸入的客戶端主導；兩台視窗大小不同，未操作的一端可能顯示不完整。需要各自獨立版面時，使用不同 session。
 
 ```yaml
 theme: terminal
