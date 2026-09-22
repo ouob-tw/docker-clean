@@ -175,13 +175,16 @@ def test_config_change_stops_deletion(run, tmp_path, monkeypatch, stage):
     assert any("設定已改變" in result["detail"] for result in payload["results"])
 
 
-def test_legacy_config_fallback_and_images_precedence(run, tmp_path):
+def test_old_config_requires_explicit_path(run, tmp_path):
     docker, invoke = run
     directory = tmp_path / ".config/docker-clean"
     path = directory / "images.yaml"
     path.rename(directory / "saved-images.yaml")
     (directory / "config.yaml").write_text("keep: ['stable']\n")
     code, payload = invoke()
+    assert code == 1 and not payload["ok"]
+    assert docker.snapshots == 0 and not docker.calls
+    code, payload = invoke("--config", str(directory / "config.yaml"))
     assert code == 0 and payload["keep"] == ["stable"]
     path.write_text("keep: ['other']\n")
     code, payload = invoke()

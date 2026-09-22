@@ -25,7 +25,7 @@ uv run dcl image clean --delete '^myapp:dev-' --keep ':stable$' --yes --json
 
 `--delete '^None$'` 選無 tag image；`--keep` 僅匹配真實 tag，沿用既有保留語意。預設跳過任何容器引用；`--force` 才要求強制刪除，與 `--yes` 分開。按 ID 刪除包含全部 tag，使用 `--no-prune`，不改動容器。刪除前重新盤點，狀態變動就跳過，查詢失敗停止；競態限制同下文。
 
-此入口預設讀取 `~/.config/docker-clean/images.yaml`，不存在時相容舊 `config.yaml`；可用 `--config /path/to/images.yaml` 指定其他檔案。設定缺失或無效即停止，即使提供命令列規則也不略過設定檢查。只採用檔案的 `keep`，與命令列 `--keep` 合併（OR）；不套用檔案的 `cleanup.force`、`cleanup.remove_tags` 或主題，不修改設定檔。`--yes` 與 `--force` 仍由命令列明確指定。每次刪除前及重新盤點後會比對設定檔內容，變更即停止。`--json` 輸出單一 JSON 物件，包含 `mode`、`ok`、規則、`force`、`entries`（image、動作、理由、目標）及 `results`（status、target、detail）；規則驗證或初次盤點錯誤包含 `ok: false` 與 `error`；逐項執行失敗則以 `ok: false` 及 `results[].detail` 回報。語法錯誤仍由參數解析器輸出至 stderr。結束碼：0 成功／預覽／無候選／狀態變動跳過，1 規則驗證或 Docker 操作失敗，2 命令語法錯誤。自動化可檢查 results 區分成功與跳過；不保證回收容量。
+此入口預設讀取 `~/.config/docker-clean/images.yaml`；可用 `--config /path/to/images.yaml` 指定其他檔案。設定缺失或無效即停止，即使提供命令列規則也不略過設定檢查。只採用檔案的 `keep`，與命令列 `--keep` 合併（OR）；不套用檔案的 `cleanup.force`、`cleanup.remove_tags` 或主題，不修改設定檔。`--yes` 與 `--force` 仍由命令列明確指定。每次刪除前及重新盤點後會比對設定檔內容，變更即停止。`--json` 輸出單一 JSON 物件，包含 `mode`、`ok`、規則、`force`、`entries`（image、動作、理由、目標）及 `results`（status、target、detail）；規則驗證或初次盤點錯誤包含 `ok: false` 與 `error`；逐項執行失敗則以 `ok: false` 及 `results[].detail` 回報。語法錯誤仍由參數解析器輸出至 stderr。結束碼：0 成功／預覽／無候選／狀態變動跳過，1 規則驗證或 Docker 操作失敗，2 命令語法錯誤。自動化可檢查 results 區分成功與跳過；不保證回收容量。
 
 ## 安裝與使用
 
@@ -64,7 +64,7 @@ Delete 輸入框顯示兩到四行內容，超過後在框內捲動。右上角�
 
 ## Keep 保留規則流程（keep／clean）
 
-預設設定為 `~/.config/docker-clean/images.yaml`（新檔不存在時相容舊 `config.yaml`），也可在子命令後指定 `--config /path/config.yaml`。設定不存在時只能由 TUI 建立，`clean` 會停止。TUI 每行一條規則，可直接新增、編輯或刪除；選項預設關閉。Enter 或點擊 image 列可勾選，再按「產生規則」把實際 tag 轉成跳脫且有 `^...$` 錨點的 Regex。無 tag 的 image 不產生名稱規則。
+預設設定為 `~/.config/docker-clean/images.yaml`，也可在子命令後指定 `--config /path/config.yaml`。設定不存在時只能由 TUI 建立，`clean` 會停止。TUI 每行一條規則，可直接新增、編輯或刪除；選項預設關閉。Enter 或點擊 image 列可勾選，再按「產生規則」把實際 tag 轉成跳脫且有 `^...$` 錨點的 Regex。無 tag 的 image 不產生名稱規則。
 
 儲存後按「預覽」，檢查中央的完整內容，再按「確認刪除」；「取消」不操作 Docker。CLI 須輸入完整 `DELETE` 才執行。修改規則或選項會使舊預覽失效。列表依序顯示 tag（長名稱換行）、人類可讀大小、精確到秒的建立日期、動作原因；Space／Enter／點擊可勾選，不跳回第一列。完整 ID 與引用容器保留在詳細預覽；Ctrl+Q 離開。
 
@@ -133,7 +133,7 @@ dcl container clean --yes
 
 刪除容器及內部檔案，保留掛載資料。不刪 image 或其他資源，不使用 force。保留的匿名 volume 不保證下次重建自動掛回。刪除前重新檢查狀態及設定，無法完全消除外部啟停的競態。若容器在列出後、inspect 前被其他程序移除，本次清理會報錯停止，等待下次排程；不自動重試。結果失敗退出碼為 1，語法錯誤為 2；JSON 含已完成紀錄，即使後續查詢失敗也不丟失。
 
-image 設定的新預設位置是 `~/.config/docker-clean/images.yaml`。若只有舊 `config.yaml`，仍相容讀寫該檔；兩者存在時新檔優先，明確 `--config` 不受影響。要遷移可用 `cp -n ~/.config/docker-clean/config.yaml ~/.config/docker-clean/images.yaml`，保留原檔且不覆蓋新檔。`dcl image clean` 使用相同的預設設定路徑，並合併命令列 `--keep`。
+image 設定固定預設為 `~/.config/docker-clean/images.yaml`，不再自動讀取舊 `config.yaml`；其他檔案須明確使用 `--config` 指定。`dcl image clean` 使用相同的預設設定路徑，並合併命令列 `--keep`。
 
 每日 03:00 排程範例（先預覽確認規則，再自行加入 `crontab -e`）：
 

@@ -93,8 +93,4 @@ def save(path: Path, config: Config, expected: bytes | None) -> bytes:
 
 
 def default_image_config() -> Path:
-    """Prefer the new image filename, retaining existing legacy installations."""
-    directory = Path.home() / ".config/docker-clean"
-    current = directory / "images.yaml"
-    legacy = directory / "config.yaml"
-    return legacy if not current.exists() and legacy.exists() else current
+    return Path.home() / ".config/docker-clean/images.yaml"

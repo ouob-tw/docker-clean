@@ -156,12 +156,12 @@ def test_rm_failure_reported(cli):
     assert code == 1 and payload['results'][0]['status'] == '失敗'
 
 
-def test_default_image_path_legacy_and_new_precedence(tmp_path, monkeypatch):
+def test_default_image_path_ignores_old_filename(tmp_path, monkeypatch):
     monkeypatch.setattr('pathlib.Path.home', lambda: tmp_path)
     directory = tmp_path / '.config/docker-clean'; directory.mkdir(parents=True)
     assert default_image_config() == directory / 'images.yaml'
     (directory / 'config.yaml').write_text('keep: []')
-    assert default_image_config() == directory / 'config.yaml'
+    assert default_image_config() == directory / 'images.yaml'
     (directory / 'images.yaml').write_text('keep: []')
     assert default_image_config() == directory / 'images.yaml'
 

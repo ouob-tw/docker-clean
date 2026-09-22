@@ -18,7 +18,7 @@
 
 ## Image 自動化設定檔（2026-09-23 使用者授權）
 
-- 比照 container clean：`dcl image clean` 預設讀取 `~/.config/docker-clean/images.yaml`，不存在時相容舊 `config.yaml`；`--config` 指定時只讀指定檔案。設定缺失、讀取或驗證失敗時停止，不因提供命令列規則而略過。
+- 比照 container clean：`dcl image clean` 預設讀取 `~/.config/docker-clean/images.yaml`；`--config` 指定時只讀指定檔案。設定缺失、讀取或驗證失敗時停止，不因提供命令列規則而略過。
 - 沿用 Image YAML 格式，只採用 `keep` 排除清單，與命令列 `--keep` 合併為 OR，保留優先於 `--delete`。不指定 `--delete` 時清理其餘未受保護 image；明確 `keep: []` 合法且文字預覽提示沒有保留規則。
 - 不套用 YAML 的 force、remove_tags 或主題；`--yes`、`--force` 仍由命令列控制。不修改設定檔。
 - 每項刪除前及重新盤點後檢查設定檔原始內容，變更、消失或讀取失敗即停止後續刪除並回傳失敗，保留已完成結果。
@@ -74,7 +74,7 @@
 
 ## YAML 設定
 
-預設位置為 `~/.config/docker-clean/images.yaml`；新檔不存在時相容舊 `config.yaml`。TUI 可儲存，CLI 與 TUI 使用同一份設定。
+預設位置為 `~/.config/docker-clean/images.yaml`。TUI 可儲存，CLI 與 TUI 使用同一份設定。
 
 ```yaml
 theme: terminal
@@ -178,7 +178,7 @@ cleanup:
 
 本節擴充原本僅操作 image 的範圍，僅 `dcl container clean` 可以刪除容器；既有 image 入口不改變容器。排程交由外部 cron，不新增背景服務，不自動安裝刪除排程。
 
-- image 設定預設為 `~/.config/docker-clean/images.yaml`；不存在時相容讀寫既有 `config.yaml`，兩者存在時以 images.yaml 優先，不合併。明確 `--config` 始終使用指定檔案。遷移時保留原檔、不覆蓋既有 images.yaml。`dcl image clean` 同樣載入此設定檔的 keep，與命令列規則合併。
+- image 設定預設為 `~/.config/docker-clean/images.yaml`；不再自動回退到舊 `config.yaml`。明確 `--config` 始終使用指定檔案。`dcl image clean` 同樣載入此設定檔的 keep，與命令列規則合併。
 - 容器使用獨立 `~/.config/docker-clean/containers.yaml`，可用 `--config` 指定；唯一規則來源為設定檔。必填 version: 1、正整數 stopped_days、keep。keep 支援 compose 與 container_names；缺省子清單為空，明確 keep: {} 合法且預覽警示無保留規則。
 - compose 是規則陣列，每條必填 project、可選 services（非空字串陣列）。省略 services 保留整個 project；提供時保留該 project 內列出的所有 service 實例。services: [] 為錯誤。container_names 為名稱陣列。全部精確比對，任一命中即保留；不同於 image tag Regex。Compose 以 Docker labels 識別，不猜測名稱。
 - 僅 status=exited 且最後 FinishedAt 距現在至少 stopped_days 天的容器符合。預設範例為 7 天，不以建立時間計算。created、dead、running、paused、restarting、removing 與含 Swarm task/service ID label 的容器一律跳過並說明。
@@ -187,7 +187,7 @@ cleanup:
 - 每項刪除前重讀設定、inspect 同一完整 ID，比對名稱、狀態、最後啟停時間、labels 與掛載。設定改變或查詢失敗停止；容器改變跳過。容器在 ls／inspect 之間消失也視為查詢失敗，停止本次清理，不自動重試。只呼叫 container rm ID，不帶 force 或 volumes，不清理 image/network/cache。匿名 volume 保留但不保證重新建立時自動掛回。
 - 個別刪除失敗可繼續，保留已完成回報；退出碼 0=成功／預覽／無候選／狀態變動跳過，1=設定查詢操作失敗，2=命令語法錯誤。沒有 Docker 交易鎖，重新檢查不能消除所有競態。
 - 每天 03:00 排程由使用者啟用 cron；flock 防止排程重疊，輸出導向紀錄。不得自動搭配 image prune。
-- 驗證涵蓋精確保留與多副本、停止時間界線、Swarm／其他狀態、錯誤設定、設定變更與容器競態、舊 image 設定相容及原功能回歸。主機只允許唯讀預覽；破壞性驗證使用隔離 Engine。
+- 驗證涵蓋精確保留與多副本、停止時間界線、Swarm／其他狀態、錯誤設定、設定變更與容器競態、image 預設路徑不回退及原功能回歸。主機只允許唯讀預覽；破壞性驗證使用隔離 Engine。
 
 ## CLI 改名（2026-09-22 使用者直接授權）
 
@@ -202,3 +202,9 @@ cleanup:
 - 完整盤點且無候選時顯示「沒有刪除候選」及摘要，不顯示刪除提醒或 --yes 提示。
 - 有候選時提示：「刪除容器及內部檔案，保留掛載資料。」
 - 執行模式先輸出預覽，再刪除；結束顯示刪除、跳過、失敗、未處理數量。查詢失敗中止時保留既有結果，未完成盤點時未處理數量標示未知。不修改原先清理安全規則。
+
+## 移除舊設定路徑相容（2026-09-23 使用者授權）
+
+- 本機重複的 `config.yaml` 經比對與 `images.yaml` 完全一致後移至垃圾桶，保留 `images.yaml` 原始內容。
+- Image 預設路徑固定為 `~/.config/docker-clean/images.yaml`，即使只有舊檔也不自動載入；CLI 設定缺失照既有規則停止。
+- 明確 `--config` 仍可指定任意檔案；容器設定與 CLI 相容別名不受影響。
