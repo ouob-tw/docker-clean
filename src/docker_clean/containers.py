@@ -92,18 +92,18 @@ def inspect(docker: Docker, ids: list[str]) -> list[Container]:
         raise CleanError(f"容器盤點資料不完整: {exc}") from exc
 
 
-def reason(c: Container, policy: Policy, now: datetime) -> tuple[bool, str]:
+def reason(c: Container, policy: Policy, now: datetime) -> tuple[bool, str, str]:
     if c.name in policy.names:
-        return False, "保留：容器名稱"
+        return False, "保留：容器名稱", "keep"
     project = c.labels.get("com.docker.compose.project")
     service = c.labels.get("com.docker.compose.service")
     for p, services in policy.compose:
         if project == p and (services is None or service in services):
-            return False, f'保留：Compose {p}' + (f'/{service}' if services else "")
+            return False, f'保留：Compose {p}' + (f'/{service}' if services else ""), "keep"
     if any(k in c.labels for k in ("com.docker.swarm.task.id", "com.docker.swarm.service.id")):
-        return False, "跳過：由 Swarm 管理"
+        return False, "跳過：由 Swarm 管理", "swarm"
     if c.status != "exited":
-        return False, f'跳過：狀態 {c.status}'
+        return False, f'跳過：狀態 {c.status}', "state"
     try:
         finished = datetime.fromisoformat(c.finished.replace("Z", "+00:00"))
         if finished.year == 1 or finished.tzinfo is None or finished > now:
@@ -112,26 +112,72 @@ def reason(c: Container, policy: Policy, now: datetime) -> tuple[bool, str]:
         raise CleanError(f'{c.name} 停止時間無效: {c.finished}') from exc
     age = now - finished
     eligible = age.total_seconds() >= policy.stopped_days * 86400
-    return eligible, f"{'刪除候選' if eligible else '未滿期限'}：停止 {age.total_seconds() / 86400:.1f} 天"
+    return eligible, f"停止 {age.total_seconds() / 86400:.1f} 天", "candidate" if eligible else "too_recent"
 
 
-def run(path: Path, yes: bool, json_output: bool) -> int:
+def render_preview(entries: list[dict], days: int | None, path: Path,
+                   show_all: bool, complete: bool, empty_keep: bool, yes: bool) -> None:
+    if empty_keep:
+        print("沒有保留規則；所有符合停止期限的非 Swarm 容器均可能刪除。")
+    title = "容器清理" if yes else "容器清理預覽"
+    print(f"{title} | 停止滿 {days} 天 | 設定 {path}" if days is not None else title)
+    if not complete and not entries:
+        print("盤點未完成。")
+        return
+    groups = [("candidate", "刪除候選"), ("too_recent", "未滿期限"),
+              ("keep", "保留"), ("swarm", "Swarm"), ("state", "其他狀態")]
+    counts = {key: sum(e["category"] == key for e in entries) for key, _ in groups}
+    for key, label in groups:
+        if key != "candidate" and not show_all:
+            continue
+        selected = [e for e in entries if e["category"] == key]
+        if not selected:
+            continue
+        print(f"{label} {len(selected)} 個：")
+        for entry in selected:
+            c = entry["container"]
+            print(f"  {c['name']} | {entry['reason']} | {c['id'][:12]}")
+            if entry["delete"]:
+                for mount in c["mounts"]:
+                    print(f"    掛載：{mount}")
+    if complete and not counts["candidate"]:
+        print("沒有刪除候選。")
+    prefix = "合計" if complete else "盤點未完成，已判斷"
+    print(f"{prefix} {len(entries)} | " + " | ".join(
+        f"{label} {counts[key]}" for key, label in groups))
+    if complete and not show_all:
+        print("使用 --all 查看全部容器與保留原因。")
+    if complete and counts["candidate"]:
+        print("刪除容器後，只存在容器裡的檔案也會刪除；另外儲存在主機資料夾或 Docker volume 的資料會保留。")
+    if complete and counts["candidate"] and not yes:
+        print("僅預覽，未修改 Docker；加上 --yes 才執行。")
+
+
+def run(path: Path, yes: bool, json_output: bool, show_all: bool = False) -> int:
     entries: list[dict] = []
     results: list[dict] = []
     error = None
     empty_keep = False
+    days = None
+    complete = False
+    rendered = False
     try:
         policy, revision = load_policy(path)
+        days = policy.stopped_days
         empty_keep = not policy.compose and not policy.names
         docker = Docker()
         ids = docker.call("container", "ls", "--all", "--quiet", "--no-trunc").split()
         now = datetime.now(timezone.utc)
         candidates = []
         for c in inspect(docker, ids):
-            delete, why = reason(c, policy, now)
-            entries.append({"container": asdict(c), "delete": delete, "reason": why})
+            delete, why, category = reason(c, policy, now)
+            entries.append({"container": asdict(c), "delete": delete, "reason": why, "category": category})
             if delete:
                 candidates.append(c)
+        complete = True
+        if not json_output:
+            render_preview(entries, days, path, show_all, complete, empty_keep, yes)
+            rendered = True
         if yes:
             for c in candidates:
                 if read_bytes(path) != revision:
@@ -151,22 +197,25 @@ def run(path: Path, yes: bool, json_output: bool) -> int:
         error = str(exc) or "已中斷"
     ok = error is None and not any(r["status"] == "失敗" for r in results)
     payload = {"mode": "execute" if yes else "preview", "ok": ok, "empty_keep": empty_keep,
-               "entries": entries, "results": results, "error": error}
+               "entries": entries, "results": results, "error": error,
+               "stopped_days": days, "plan_complete": complete,
+               "summary": {"total": len(entries), **{
+                   key: sum(e["category"] == key for e in entries)
+                   for key in ("candidate", "keep", "too_recent", "swarm", "state")}}}
     if json_output:
         print(json.dumps(payload, ensure_ascii=False))
     else:
-        if empty_keep:
-            print("沒有保留規則；所有符合停止期限的非 Swarm 容器均可能刪除。")
-        for entry in entries:
-            cdata = entry["container"]
-            print(f"{cdata['name']} | {entry['reason']} | {cdata['id'][:12]}")
-            for mount in cdata["mounts"]:
-                print(f'  掛載：{mount}')
-        print("刪除會失去容器可寫層；掛載資料與 volume 保留，匿名 volume 不自動重新掛回。")
+        if not rendered:
+            render_preview(entries, days, path, show_all, complete, empty_keep, yes)
         for result in results:
-            print(f"{result['name']}  {result['id']}  {result['status']}  {result['detail']}")
+            detail = "" if result["status"] == "刪除" else f" | {result['detail']}"
+            print(f"{result['name']} | {result['status']} | {result['id'][:12]}{detail}")
         if error:
-            print(f'停止：{error}')
-        elif not yes:
-            print("僅預覽，未修改 Docker；加上 --yes 才執行。")
+            print(f"停止：{error}")
+        if yes:
+            deleted = sum(r["status"] == "刪除" for r in results)
+            skipped = sum(r["status"] == "跳過" for r in results)
+            failed = sum(r["status"] == "失敗" for r in results)
+            remaining = str(sum(e["delete"] for e in entries) - len(results)) if complete else "未知（盤點未完成）"
+            print(f"結果 | 刪除 {deleted} | 跳過 {skipped} | 失敗 {failed} | 未處理 {remaining}")
     return 0 if ok else 1

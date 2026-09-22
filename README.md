@@ -123,12 +123,13 @@ uv run pytest tests/unit tests/integration
 設定範例見 [examples/containers.yaml](examples/containers.yaml)。檢查其中保留清單後，存為 `~/.config/docker-clean/containers.yaml`。`stopped_days: 7` 表示連續停止滿 7 天。`keep.compose` 的 project 不指定 services 時保留整套部署；指定 services 時保留列出服務的全部實例。`keep.container_names` 精確比對容器名稱。任何保留規則命中即保留。設定不存在或錯誤時停止；明確 `keep: {}` 表示沒有保留規則。
 
 ```bash
-dcl container clean
+dcl container clean          # 只顯示候選與摘要
+dcl container clean --all    # 查看全部容器與保留原因
 dcl container clean --config /path/to/containers.yaml --json
 dcl container clean --yes
 ```
 
-刪除會失去容器可寫層；不刪 volume、掛載資料、image 或其他資源，不使用 force。保留的匿名 volume 不保證下次重建自動掛回。刪除前重新檢查狀態及設定，無法完全消除外部啟停的競態。若容器在列出後、inspect 前被其他程序移除，本次清理會報錯停止，等待下次排程；不自動重試。結果失敗退出碼為 1，語法錯誤為 2；JSON 含已完成紀錄，即使後續查詢失敗也不丟失。
+刪除容器後，只存在容器裡的檔案也會刪除；另外儲存在主機資料夾或 Docker volume 的資料會保留。不刪 image 或其他資源，不使用 force。保留的匿名 volume 不保證下次重建自動掛回。刪除前重新檢查狀態及設定，無法完全消除外部啟停的競態。若容器在列出後、inspect 前被其他程序移除，本次清理會報錯停止，等待下次排程；不自動重試。結果失敗退出碼為 1，語法錯誤為 2；JSON 含已完成紀錄，即使後續查詢失敗也不丟失。
 
 image 設定的新預設位置是 `~/.config/docker-clean/images.yaml`。若只有舊 `config.yaml`，仍相容讀寫該檔；兩者存在時新檔優先，明確 `--config` 不受影響。要遷移可用 `cp -n ~/.config/docker-clean/config.yaml ~/.config/docker-clean/images.yaml`，保留原檔且不覆蓋新檔。`dcl image clean` 仍只使用命令列規則。
 
@@ -147,3 +148,7 @@ PATH=/usr/local/bin:/usr/bin:/bin
 ```
 
 以上為此主機範例，其他帳號需替換 `/home/swy`。紀錄可由系統 logrotate 管理；工具不安裝排程，也不順便清理 image。Swarm 舊 task 容器需另外盤點，不屬於本指令範圍。
+
+容器文字預覽只展開候選的掛載資訊；`--all` 額外列出其他容器，但不改變清理範圍。沒有候選時顯示摘要，不要求執行刪除。執行後顯示刪除／跳過／失敗／未處理數量；盤點未完成時明確標示，未處理數量為未知。
+
+`--json` 始終保留全部容器，即使搭配 `--all` 也不改變內容。新增 `entries[].category`、`summary`、`stopped_days`、`plan_complete`，分類依保留優先規則互斥統計；`plan_complete: false` 時摘要只代表已完成判斷的項目。

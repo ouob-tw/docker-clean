@@ -35,12 +35,13 @@ def main() -> int:
     container_clean = container_actions.add_parser("clean", help="依設定預覽或清理容器")
     container_clean.add_argument("--config", type=Path,
                                  default=Path.home() / ".config/docker-clean/containers.yaml")
+    container_clean.add_argument("--all", action="store_true", help="文字顯示全部容器；不影響清理範圍或 JSON")
     container_clean.add_argument("--yes", action="store_true")
     container_clean.add_argument("--json", action="store_true")
     args = parser.parse_args()
     if args.resource == "container":
         from .containers import run
-        return run(args.config, args.yes, args.json)
+        return run(args.config, args.yes, args.json, args.all)
     if args.action in {"keep", "delete"}:
         from .cli import main as tui_main
         return tui_main([args.action, "--config", str(args.config)]

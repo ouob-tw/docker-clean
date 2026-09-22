@@ -47,11 +47,13 @@ def cli(tmp_path, monkeypatch, capsys):
     fake = Fake()
     monkeypatch.setattr(containers, 'Docker', lambda: fake)
 
-    def run(execute=False):
+    def run(execute=False, json_output=True, show_all=False):
         monkeypatch.setattr(sys, 'argv', ['dcl', 'container', 'clean', '--config', str(path),
-                                       '--json', *(['--yes'] if execute else [])])
+                                       *(['--json'] if json_output else []), *(['--yes'] if execute else []),
+                                       *(['--all'] if show_all else [])])
         code = automation.main()
-        return code, json.loads(capsys.readouterr().out)
+        output = capsys.readouterr().out
+        return code, json.loads(output) if json_output else output
 
     return fake, path, policy, run
 
@@ -189,3 +191,67 @@ def test_missing_config_does_not_connect(cli):
     fake, path, _, run = cli
     path.rename(path.with_suffix('.backup'))
     assert run(True)[0] == 1 and fake.inspections == 0 and not fake.deleted
+
+
+def test_text_default_candidates_and_all_only_affects_display(cli):
+    fake, _, _, run = cli
+    old = item('old')
+    old['Mounts'] = [{'Type': 'bind', 'Source': '/old-data', 'Destination': '/data'}]
+    kept = item('active', status='running')
+    kept['Mounts'] = [{'Type': 'bind', 'Source': '/active-data', 'Destination': '/data'}]
+    fake.items = [old, kept]
+    code, text = run(json_output=False)
+    assert code == 0 and 'old |' in text and '/old-data' in text
+    assert 'active |' not in text and '/active-data' not in text
+    assert '合計 2' in text and '只存在容器裡的檔案也會刪除' in text
+    code, text = run(json_output=False, show_all=True)
+    assert 'active |' in text and '/active-data' not in text
+    assert not fake.deleted
+
+
+def test_json_all_does_not_filter_report(cli):
+    fake, _, _, run = cli
+    fake.items = [item(), item('running', status='running'), item('recent', days=1)]
+    _, normal = run()
+    _, all_output = run(show_all=True)
+    assert normal == all_output
+    assert normal['summary'] == {'total': 3, 'candidate': 1, 'keep': 0,
+                                 'too_recent': 1, 'swarm': 0, 'state': 1}
+    assert normal['plan_complete'] and normal['stopped_days'] == 7
+
+
+def test_zero_candidates_has_no_delete_hint(cli):
+    fake, _, _, run = cli
+    fake.items = [item(days=1)]
+    code, text = run(json_output=False)
+    assert code == 0 and '沒有刪除候選' in text
+    assert '加上 --yes' not in text and '只存在容器裡' not in text
+
+
+def test_incomplete_plan_never_reports_zero_candidates_as_success(cli):
+    fake, _, _, run = cli
+    fake.items[0]['State']['FinishedAt'] = 'invalid'
+    code, text = run(execute=True, json_output=False)
+    assert code == 1 and '盤點未完成' in text and '未處理 未知' in text
+    assert '沒有刪除候選' not in text and not fake.deleted
+    assert '--all' not in text and '刪除候選 0' not in text
+
+
+def test_partial_execution_summary(cli):
+    fake, _, _, run = cli
+    fake.items = [item(), item('b')]
+    def fail_later():
+        if fake.inspections == 3:
+            raise CleanError('inspect failure')
+    fake.change = fail_later
+    code, text = run(execute=True, json_output=False)
+    assert code == 1 and '刪除 1 | 跳過 0 | 失敗 0 | 未處理 1' in text
+    assert '停止：inspect failure' in text
+
+
+def test_all_does_not_expand_execution_scope(cli):
+    fake, _, _, run = cli
+    fake.items = [item(), item('running', status='running')]
+    code, text = run(execute=True, json_output=False, show_all=True)
+    assert code == 0 and fake.deleted == ['a']
+    assert '刪除 1 | 跳過 0 | 失敗 0 | 未處理 0' in text
