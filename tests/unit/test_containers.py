@@ -48,7 +48,7 @@ def cli(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(containers, 'Docker', lambda: fake)
 
     def run(execute=False):
-        monkeypatch.setattr(sys, 'argv', ['dc', 'container', 'clean', '--config', str(path),
+        monkeypatch.setattr(sys, 'argv', ['dcl', 'container', 'clean', '--config', str(path),
                                        '--json', *(['--yes'] if execute else [])])
         code = automation.main()
         return code, json.loads(capsys.readouterr().out)

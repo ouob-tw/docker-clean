@@ -4,12 +4,12 @@
 
 ## Image 入口命名（2026-09-22 使用者直接授權）
 
-- TUI 使用 `dc image keep`（保留規則）與 `dc image delete`（刪除選取項目）；標題包含 Docker Image Clean 及 Keep／Delete，說明不再使用白名單名稱。
-- `dc image clean` 維持自動化入口。`docker-clean keep`／`delete` 同樣可用，舊 `tui`／`whitelist` 僅保留為相容別名。
+- TUI 使用 `dcl image keep`（保留規則）與 `dcl image delete`（刪除選取項目）；標題包含 Docker Image Clean 及 Keep／Delete，說明不再使用白名單名稱。
+- `dcl image clean` 維持自動化入口。`docker-clean keep`／`delete` 同樣可用，舊 `tui`／`whitelist` 僅保留為相容別名。
 
 ## 自動化 CLI（2026-09-22 使用者直接授權）
 
-- 新增 `dc image clean`；本節對此入口取代舊版不提供略過確認的限制，其餘入口維持原行為。
+- 新增 `dcl image clean`；本節對此入口取代舊版不提供略過確認的限制，其餘入口維持原行為。
 - `--delete REGEX` 只清理命中者，`--keep REGEX` 保護命中者；可重複、多條 OR、Python `re.search` 比對完整 tag，同 ID 任一 tag 命中即作用於整個 ID，保留優先。只有 keep 時清理其餘。
 - 至少提供一條規則，空白或無效 Regex 拒絕執行。delete 以 `None` 匹配無 tag image，keep 只匹配真實 tag。
 - 預設只預覽，不詢問輸入；`--yes` 執行，`--force` 獨立控制強制刪除，預設跳過容器引用。按完整 ID 使用 `--no-prune` 刪除，包含全部 tag。
@@ -18,7 +18,7 @@
 
 ## Delete 刪除新流程（2026-09-21 使用者直接授權）
 
-新增獨立入口 `dc image delete`，以下規則適用新流程；本文其餘保留規則、YAML 與四種模式描述繼續適用原有 `keep`／`clean`。
+新增獨立入口 `dcl image delete`，以下規則適用新流程；本文其餘保留規則、YAML 與四種模式描述繼續適用原有 `keep`／`clean`。
 
 - 初始不勾選任何 image，不讀寫舊版設定；Regex 與勾選不持久化。
 - Delete 介面預設 E-Ink 白底黑字，游標／聚焦反相，停用按鈕以刪除線區別；Ctrl+T 可切換本次主題。
@@ -48,7 +48,7 @@
 
 ## 使用者流程
 
-1. 執行 `dc image keep`，列表依序顯示選取標記、tag、大小、建立日期、動作原因；完整 ID 與容器引用狀態保留在詳細預覽。
+1. 執行 `dcl image keep`，列表依序顯示選取標記、tag、大小、建立日期、動作原因；完整 ID 與容器引用狀態保留在詳細預覽。
 2. 新增、修改、刪除 Regex 規則，即時查看命中的 tag、受保護的 image 與原因。
 3. 可從列表勾選 image 以產生跳脫後、加上首尾錨點的 tag 規則；持久化內容仍統一為 Regex。無 tag 的 image 不產生虛構名稱規則。
 4. 選擇「移除 tag」與「強制刪除 image」，兩者初始預設皆關閉；儲存後，下次載入已儲存設定。
@@ -168,9 +168,9 @@ cleanup:
 
 ## 容器清理與設定分離（2026-09-22 使用者直接授權）
 
-本節擴充原本僅操作 image 的範圍，僅 `dc container clean` 可以刪除容器；既有 image 入口不改變容器。排程交由外部 cron，不新增背景服務，不自動安裝刪除排程。
+本節擴充原本僅操作 image 的範圍，僅 `dcl container clean` 可以刪除容器；既有 image 入口不改變容器。排程交由外部 cron，不新增背景服務，不自動安裝刪除排程。
 
-- image 設定預設為 `~/.config/docker-clean/images.yaml`；不存在時相容讀寫既有 `config.yaml`，兩者存在時以 images.yaml 優先，不合併。明確 `--config` 始終使用指定檔案。遷移時保留原檔、不覆蓋既有 images.yaml。`dc image clean` 仍只讀命令列規則。
+- image 設定預設為 `~/.config/docker-clean/images.yaml`；不存在時相容讀寫既有 `config.yaml`，兩者存在時以 images.yaml 優先，不合併。明確 `--config` 始終使用指定檔案。遷移時保留原檔、不覆蓋既有 images.yaml。`dcl image clean` 仍只讀命令列規則。
 - 容器使用獨立 `~/.config/docker-clean/containers.yaml`，可用 `--config` 指定；唯一規則來源為設定檔。必填 version: 1、正整數 stopped_days、keep。keep 支援 compose 與 container_names；缺省子清單為空，明確 keep: {} 合法且預覽警示無保留規則。
 - compose 是規則陣列，每條必填 project、可選 services（非空字串陣列）。省略 services 保留整個 project；提供時保留該 project 內列出的所有 service 實例。services: [] 為錯誤。container_names 為名稱陣列。全部精確比對，任一命中即保留；不同於 image tag Regex。Compose 以 Docker labels 識別，不猜測名稱。
 - 僅 status=exited 且最後 FinishedAt 距現在至少 stopped_days 天的容器符合。預設範例為 7 天，不以建立時間計算。created、dead、running、paused、restarting、removing 與含 Swarm task/service ID label 的容器一律跳過並說明。
@@ -180,3 +180,8 @@ cleanup:
 - 個別刪除失敗可繼續，保留已完成回報；退出碼 0=成功／預覽／無候選／狀態變動跳過，1=設定查詢操作失敗，2=命令語法錯誤。沒有 Docker 交易鎖，重新檢查不能消除所有競態。
 - 每天 03:00 排程由使用者啟用 cron；flock 防止排程重疊，輸出導向紀錄。不得自動搭配 image prune。
 - 驗證涵蓋精確保留與多副本、停止時間界線、Swarm／其他狀態、錯誤設定、設定變更與容器競態、舊 image 設定相容及原功能回歸。主機只允許唯讀預覽；破壞性驗證使用隔離 Engine。
+
+## CLI 改名（2026-09-22 使用者直接授權）
+
+- 短指令改為 `dcl`，套件不再安裝 `dc`，避免與其他工具衝突。
+- `docker-clean` 舊入口及設定目錄維持不變。

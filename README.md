@@ -4,19 +4,19 @@
 
 ## Image 清理入口
 
-- `dc image keep`：開啟保留規則 TUI，命中者保留、清理其餘。
-- `dc image delete`：開啟刪除選取 TUI，只刪除勾選者。
-- `dc image clean`：自動化 CLI，使用以下參數。
+- `dcl image keep`：開啟保留規則 TUI，命中者保留、清理其餘。
+- `dcl image delete`：開啟刪除選取 TUI，只刪除勾選者。
+- `dcl image clean`：自動化 CLI，使用以下參數。
 
 畫面標題分別標示 Image Keep／Delete。舊 `docker-clean tui`／`whitelist` 保留相容，新指令也可寫成 `docker-clean keep`／`delete`。
 
-## 自動化 CLI：dc image clean
+## 自動化 CLI：dcl image clean
 
 ```sh
-uv run dc image clean --delete '^myapp:dev-'
-uv run dc image clean --keep '^postgres:'
-uv run dc image clean --delete '^myapp:dev-' --keep ':stable$' --yes --json
-# uv tool install . 後可直接使用 dc image clean
+uv run dcl image clean --delete '^myapp:dev-'
+uv run dcl image clean --keep '^postgres:'
+uv run dcl image clean --delete '^myapp:dev-' --keep ':stable$' --yes --json
+# uv tool install . 後可直接使用 dcl image clean
 ```
 
 預設只預覽、不詢問輸入；加上 `--yes` 才執行。`--delete` 只選命中的 image，`--keep` 保護命中的整個 image；兩者同時使用時保留優先。只有 `--keep` 時清理其餘 image。兩個參數都可重複，多條採 OR，以 Python `re.search` 比對完整 tag；任一 tag 命中即作用於整個 ID。至少提供一條規則，空白或無效 Regex 拒絕執行；全部匹配請明確用 `.*`。
@@ -31,17 +31,17 @@ uv run dc image clean --delete '^myapp:dev-' --keep ':stable$' --yes --json
 
 ```sh
 uv sync --locked
-uv run dc image delete
-uv run dc image keep
+uv run dcl image delete
+uv run dcl image keep
 uv run docker-clean clean
 # 或安裝成日常指令
 uv tool install .
-dc image keep
+dcl image keep
 ```
 
 ## Delete 刪除（新流程）
 
-執行 `uv run dc image delete`。預設使用 E-Ink 白底黑字主題，游標與聚焦按鈕黑白反相，停用按鈕以刪除線區別，避免依賴灰底或淡字。初始不勾選任何 image，不讀寫舊的保留設定；Regex 與勾選只用於本次操作。
+執行 `uv run dcl image delete`。預設使用 E-Ink 白底黑字主題，游標與聚焦按鈕黑白反相，停用按鈕以刪除線區別，避免依賴灰底或淡字。初始不勾選任何 image，不讀寫舊的保留設定；Regex 與勾選只用於本次操作。
 
 1. 上方輸入框每行一條 Python Regex；多條採 OR，使用 `re.search` 比對完整 `repository:tag`。「Regex 篩選」只改變顯示，「Regex 勾選」將命中項目加入勾選。旁邊「顯示全部」解除篩選，保留 Regex 與勾選；未篩選時停用。空白行忽略，清空後篩選也可恢復全部；無效 Regex 保留既有篩選與勾選。
 2. 下方表格用 Space／Enter／點擊增減勾選，也可「清除勾選」。同一 image 任一 tag 命中就勾選整個 image。無 tag 顯示 `None`，可用 `^None$` 篩選或「Regex 勾選」；`.*` 也包含無 tag 項目。`None` 僅用於顯示與比對，不會新增實際 tag。
@@ -118,32 +118,32 @@ uv run pytest tests/unit tests/integration
 
 ## 容器自動清理
 
-`dc container clean` 依「最後停止時間」清理普通容器，預設只預覽。只接受 exited；執行中、從未啟動、其他狀態及 Swarm 管理的容器一律跳過。
+`dcl container clean` 依「最後停止時間」清理普通容器，預設只預覽。只接受 exited；執行中、從未啟動、其他狀態及 Swarm 管理的容器一律跳過。
 
 設定範例見 [examples/containers.yaml](examples/containers.yaml)。檢查其中保留清單後，存為 `~/.config/docker-clean/containers.yaml`。`stopped_days: 7` 表示連續停止滿 7 天。`keep.compose` 的 project 不指定 services 時保留整套部署；指定 services 時保留列出服務的全部實例。`keep.container_names` 精確比對容器名稱。任何保留規則命中即保留。設定不存在或錯誤時停止；明確 `keep: {}` 表示沒有保留規則。
 
 ```bash
-dc container clean
-dc container clean --config /path/to/containers.yaml --json
-dc container clean --yes
+dcl container clean
+dcl container clean --config /path/to/containers.yaml --json
+dcl container clean --yes
 ```
 
 刪除會失去容器可寫層；不刪 volume、掛載資料、image 或其他資源，不使用 force。保留的匿名 volume 不保證下次重建自動掛回。刪除前重新檢查狀態及設定，無法完全消除外部啟停的競態。若容器在列出後、inspect 前被其他程序移除，本次清理會報錯停止，等待下次排程；不自動重試。結果失敗退出碼為 1，語法錯誤為 2；JSON 含已完成紀錄，即使後續查詢失敗也不丟失。
 
-image 設定的新預設位置是 `~/.config/docker-clean/images.yaml`。若只有舊 `config.yaml`，仍相容讀寫該檔；兩者存在時新檔優先，明確 `--config` 不受影響。要遷移可用 `cp -n ~/.config/docker-clean/config.yaml ~/.config/docker-clean/images.yaml`，保留原檔且不覆蓋新檔。`dc image clean` 仍只使用命令列規則。
+image 設定的新預設位置是 `~/.config/docker-clean/images.yaml`。若只有舊 `config.yaml`，仍相容讀寫該檔；兩者存在時新檔優先，明確 `--config` 不受影響。要遷移可用 `cp -n ~/.config/docker-clean/config.yaml ~/.config/docker-clean/images.yaml`，保留原檔且不覆蓋新檔。`dcl image clean` 仍只使用命令列規則。
 
 每日 03:00 排程範例（先預覽確認規則，再自行加入 `crontab -e`）：
 
 ```bash
 mkdir -p ~/.local/state/docker-clean
-command -v dc
+command -v dcl
 ```
 
-以下 `/ABS/PATH/dc` 必須替換為上一步的絕對路徑；cron 帳號需有 Docker 權限，PATH 需包含 docker。系統時區決定 03:00 的實際時間；台灣主機應為 Asia/Taipei。cron 服務必須啟用。
+以下 `/ABS/PATH/dcl` 必須替換為上一步的絕對路徑；cron 帳號需有 Docker 權限，PATH 需包含 docker。系統時區決定 03:00 的實際時間；台灣主機應為 Asia/Taipei。cron 服務必須啟用。
 
 ```cron
 PATH=/usr/local/bin:/usr/bin:/bin
-0 3 * * * /usr/bin/flock -n /home/swy/.local/state/docker-clean/container.lock /ABS/PATH/dc container clean --yes --json >> /home/swy/.local/state/docker-clean/container.log 2>&1
+0 3 * * * /usr/bin/flock -n /home/swy/.local/state/docker-clean/container.lock /ABS/PATH/dcl container clean --yes --json >> /home/swy/.local/state/docker-clean/container.log 2>&1
 ```
 
 以上為此主機範例，其他帳號需替換 `/home/swy`。紀錄可由系統 logrotate 管理；工具不安裝排程，也不順便清理 image。Swarm 舊 task 容器需另外盤點，不屬於本指令範圍。

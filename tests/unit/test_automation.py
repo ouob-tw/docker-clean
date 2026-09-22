@@ -41,7 +41,7 @@ def run(monkeypatch, capsys):
     docker = FakeDocker()
     monkeypatch.setattr(automation, "Docker", lambda: docker)
     def invoke(*args):
-        monkeypatch.setattr(sys, "argv", ["dc", "image", "clean", "--json", *args])
+        monkeypatch.setattr(sys, "argv", ["dcl", "image", "clean", "--json", *args])
         code = automation.main()
         output = capsys.readouterr()
         assert not output.err

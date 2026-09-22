@@ -10,3 +10,9 @@
 - NOT_EXECUTED：凌晨排程；本次未安裝或啟用 cron。
 
 主機設定已建立 `images.yaml` 與 `containers.yaml`，保留原 `config.yaml`。未刪除任何既有容器、image 或 volume。
+
+## 短指令改名驗證
+
+- PASS：`dcl` 全域安裝與 help；120 項單元測試、mypy 通過。
+- PASS：`dcl container clean --json` 真實主機唯讀預覽，0 筆刪除；原工具安裝的 `/home/swy/.local/bin/dc` 已移除。
+- 上方 `dc` 為改名前的驗證紀錄，新操作請使用 `dcl`。

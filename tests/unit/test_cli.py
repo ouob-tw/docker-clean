@@ -70,7 +70,7 @@ def test_dc_image_tui_routes_and_titles(tmp_path, monkeypatch, mode):
         calls.append(self.title)
     monkeypatch.setattr(CleanerApp, "run", keep_run)
     monkeypatch.setattr(WhitelistApp, "run", lambda self: calls.append(self.title))
-    args = ["dc", "image", mode]
+    args = ["dcl", "image", mode]
     if mode == "keep":
         args.extend(["--config", str(path)])
     monkeypatch.setattr(sys, "argv", args)

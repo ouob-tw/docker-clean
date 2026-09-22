@@ -47,7 +47,7 @@ def load(path: Path, *, allow_missing: bool = False) -> tuple[Config, bytes | No
     if raw is None:
         if allow_missing:
             return Config(), None
-        raise CleanError("設定不存在；請先執行 dc image keep 建立設定")
+        raise CleanError("設定不存在；請先執行 dcl image keep 建立設定")
     try:
         data = yaml.safe_load(raw)
     except (yaml.YAMLError, UnicodeError) as exc:

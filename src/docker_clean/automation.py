@@ -12,7 +12,7 @@ from .plan import execute, plan, render, render_results
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(prog="dc")
+    parser = argparse.ArgumentParser(prog="dcl")
     commands = parser.add_subparsers(dest="resource", required=True)
     image = commands.add_parser("image")
     actions = image.add_subparsers(dest="action", required=True)
