@@ -1,4 +1,4 @@
-from textual.widgets import Button, Checkbox, DataTable, Static, TextArea
+from textual.widgets import Button, Checkbox, DataTable, Static, TextArea, Tooltip
 
 from docker_clean.config import Config, load, save
 from docker_clean.engine import Image
@@ -16,6 +16,27 @@ class DockerFixture:
     def remove(self, target, force):
         self.calls.append((target, force))
         return "Deleted: " + target
+
+
+async def test_keep_buttons_show_help_after_hover_without_actions(tmp_path):
+    path = tmp_path / "config.yaml"
+    docker = DockerFixture()
+    app = CleanerApp(path, docker)
+    async with app.run_test(size=(100, 30), tooltips=True) as pilot:
+        tooltip = app.screen.query_one(Tooltip)
+        for button_id in ("help", "save", "reload", "refresh", "select", "preview", "confirm", "cancel"):
+            await pilot.hover("#rules")
+            await pilot.pause(app.TOOLTIP_DELAY + 0.1)
+            await pilot.hover(f"#{button_id}")
+            assert not tooltip.display, button_id
+            await pilot.pause(app.TOOLTIP_DELAY + 0.1)
+            assert tooltip.display, button_id
+            assert str(app.query_one(f"#{button_id}", Button).tooltip) in str(tooltip.render())
+        await pilot.hover("#rules")
+        await pilot.pause(app.TOOLTIP_DELAY + 0.1)
+        assert not tooltip.display
+        assert not path.exists()
+        assert not docker.calls
 
 
 async def test_edit_save_reopen_preview_invalidation_and_cancel(tmp_path):

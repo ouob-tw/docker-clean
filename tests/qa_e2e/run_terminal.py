@@ -54,7 +54,7 @@ def main():
         assert 'busybox' not in path.read_text()
         # Selection creates anchored, escaped exact tag rules.
         select(target)
-        t.click_button('產生規則'); t.click_button('儲存')
+        t.click_button('加入保留規則'); t.click_button('儲存')
         assert set(yaml.safe_load(path.read_text())['keep']) == {
             '.', r'^qa\-ui\-script:1\.2$', r'^qa\-ui\-script:alias$'}
         t.capture('replay-generated')
@@ -67,7 +67,7 @@ def main():
         t.click_button('重新載入')
         # Selected image disappears between user actions: exact original crash trigger.
         docker('image', 'rm', '--force', '--no-prune', target)
-        t.click_button('預覽'); t.click_button('產生規則'); t.click_button('儲存')
+        t.click_button('預覽'); t.click_button('加入保留規則'); t.click_button('儲存')
         assert '已儲存' in t.capture('replay-stale-selection')
         # Preview -> cancel leaves full inventory unchanged.
         doomed = image('qa-ui-script-delete:latest')

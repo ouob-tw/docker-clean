@@ -65,6 +65,7 @@ class CleanerApp(App):
     TITLE = "Docker Image Clean — Keep（保留規則）"
     CSS = """
     Screen { overflow: hidden; }
+    Tooltip { border: solid $foreground; padding: 0; }
     #rules { height: 6; }
     #images { height: 1fr; }
     #preview-details { height: 1fr; display: none; }
@@ -120,21 +121,24 @@ class CleanerApp(App):
         with Horizontal():
             yield Checkbox("逐一移除標籤", id="remove-tags", compact=True,
                            tooltip="逐一移除待清理 image 的所有 tag；最後一個標籤移除時，可能一併刪除 image。")
-            yield Checkbox("強制刪除 image", id="force", compact=True)
+            yield Checkbox("強制刪除 image", id="force", compact=True,
+                           tooltip="仍被容器使用的映像也會列入清理；符合保留規則的仍保留，Docker 可能拒絕刪除。")
         with Horizontal():
-            yield Button("儲存", id="save")
-            yield Button("重新載入", id="reload")
-            yield Button("刷新", id="refresh")
+            yield Button("儲存", id="save", tooltip="儲存目前的保留規則與清理選項。")
+            yield Button("重新載入", id="reload", tooltip="重讀已儲存的設定，放棄尚未儲存的修改。")
+            yield Button("刷新", id="refresh", tooltip="更新映像清單，保留正在編輯的規則。")
         yield ImageTable(id="images", cursor_type="row")
         with ContainedVerticalScroll(id="preview-details"):
             yield Static("", id="output", markup=False)
         with Vertical(id="bottom-bar"):
             yield Static("", id="status", markup=False)
             with Horizontal():
-                yield Button("產生規則", id="select")
-                yield Button("預覽", id="preview")
-                yield Button("確認刪除", id="confirm", variant="error", disabled=True)
-                yield Button("取消", id="cancel")
+                yield Button("加入保留規則", id="select",
+                             tooltip="把勾選映像的標籤加入保留規則，之後請儲存。")
+                yield Button("預覽", id="preview", tooltip="查看哪些映像會保留或刪除；請先儲存。")
+                yield Button("確認刪除", id="confirm", variant="error", disabled=True,
+                             tooltip="依目前預覽執行刪除。")
+                yield Button("取消", id="cancel", tooltip="取消本次預覽，返回映像清單。")
                 yield Footer(show_command_palette=False)
 
     def on_mount(self) -> None:
@@ -327,7 +331,7 @@ class CleanerApp(App):
                         if pattern not in rules:
                             rules.append(pattern)
                 self.query_one("#rules", TextArea).load_text(self.rules_text(tuple(rules)))
-                self.message("已產生精確 tag 規則；無 tag 的 image 不產生規則。請儲存。")
+                self.message("已處理勾選項目，請檢查上方保留規則並按「儲存」。沒有標籤的映像會略過。")
             elif action == "save":
                 if not self.loaded:
                     raise CleanError("設定載入失敗，請修正檔案並重新載入")

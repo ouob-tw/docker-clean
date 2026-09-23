@@ -24,7 +24,7 @@ def click_button(label):
     lines = subprocess.check_output(['tmux', 'capture-pane', '-p', '-t', SESSION], text=True).splitlines()
     for row, line in enumerate(lines, 1):
         if label in line and (('重新載入' in line and '重新盤點' in line)
-                              or ('產生規則' in line and '確認刪除' in line)):
+                              or ('加入保留規則' in line and '確認刪除' in line)):
             click(cell_len(line[:line.index(label)]) + 1, row)
             return
     raise AssertionError(f'Button not visible: {label}')

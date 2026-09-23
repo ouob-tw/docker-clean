@@ -21,4 +21,4 @@ class AppHeader(Horizontal):
 
     def compose(self) -> ComposeResult:
         yield Static(self.app.title, id="app-title", markup=False)
-        yield ActionButton("使用說明", id="help")
+        yield ActionButton("使用說明", id="help", tooltip="查看操作步驟與清理選項說明。")
