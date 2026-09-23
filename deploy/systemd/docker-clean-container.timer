@@ -1,0 +1,9 @@
+[Unit]
+Description=Clean stopped Docker containers daily at 03:00 Taipei time
+
+[Timer]
+OnCalendar=*-*-* 03:00:00 Asia/Taipei
+Persistent=false
+
+[Install]
+WantedBy=timers.target

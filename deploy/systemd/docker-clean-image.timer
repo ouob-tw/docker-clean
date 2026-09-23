@@ -1,0 +1,9 @@
+[Unit]
+Description=Check unused Docker images daily at 03:15 Taipei time
+
+[Timer]
+OnCalendar=*-*-* 03:15:00 Asia/Taipei
+Persistent=false
+
+[Install]
+WantedBy=timers.target

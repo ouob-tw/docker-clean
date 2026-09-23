@@ -18,12 +18,15 @@ class Config:
     remove_tags: bool = False
     force: bool = False
     theme: str = "terminal"
+    unused_days: int | None = None
 
     def validate(self) -> None:
         if not isinstance(self.keep, tuple) or not all(isinstance(x, str) for x in self.keep):
             raise CleanError("keep 必須是字串陣列")
         if type(self.remove_tags) is not bool or type(self.force) is not bool:
             raise CleanError("cleanup 選項必須是布林值")
+        if self.unused_days is not None and (type(self.unused_days) is not int or self.unused_days < 1):
+            raise CleanError("cleanup.unused_days 必須是大於零的整數")
         if not isinstance(self.theme, str) or self.theme not in {"terminal", "e-ink", *BUILTIN_THEMES}:
             raise CleanError("theme 必須是 terminal、e-ink 或有效的內建主題名稱")
         for pattern in self.keep:
@@ -58,18 +61,21 @@ def load(path: Path, *, allow_missing: bool = False) -> tuple[Config, bytes | No
     cleanup = data.get("cleanup", {})
     if not isinstance(keep, list) or not all(isinstance(x, str) for x in keep):
         raise CleanError("keep 必須是字串陣列；空清單請明確使用 keep: []")
-    if not isinstance(cleanup, dict) or set(cleanup) - {"remove_tags", "force"}:
-        raise CleanError("cleanup 必須僅含 remove_tags 與 force")
+    if not isinstance(cleanup, dict) or set(cleanup) - {"remove_tags", "force", "unused_days"}:
+        raise CleanError("cleanup 必須僅含 remove_tags、force 與 unused_days")
     config = Config(tuple(keep), cleanup.get("remove_tags", False), cleanup.get("force", False),
-                    data.get("theme", "terminal"))
+                    data.get("theme", "terminal"), cleanup.get("unused_days"))
     config.validate()
     return config, raw
 
 
 def save(path: Path, config: Config, expected: bytes | None) -> bytes:
     config.validate()
-    raw = yaml.safe_dump({"theme": config.theme, "keep": list(config.keep), "cleanup": {
-        "remove_tags": config.remove_tags, "force": config.force}}, allow_unicode=True).encode()
+    cleanup: dict[str, bool | int] = {"remove_tags": config.remove_tags, "force": config.force}
+    if config.unused_days is not None:
+        cleanup["unused_days"] = config.unused_days
+    raw = yaml.safe_dump({"theme": config.theme, "keep": list(config.keep), "cleanup": cleanup},
+                         allow_unicode=True).encode()
     if read_bytes(path) != expected:
         raise CleanError("設定已被外部修改；請重新載入")
     temporary = None

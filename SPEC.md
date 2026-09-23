@@ -19,10 +19,17 @@
 ## Image 自動化設定檔（2026-09-23 使用者授權）
 
 - 比照 container clean：`dcl image clean` 預設讀取 `~/.config/docker-clean/images.yaml`；`--config` 指定時只讀指定檔案。設定缺失、讀取或驗證失敗時停止，不因提供命令列規則而略過。
-- 沿用 Image YAML 格式，只採用 `keep` 排除清單，與命令列 `--keep` 合併為 OR，保留優先於 `--delete`。不指定 `--delete` 時清理其餘未受保護 image；明確 `keep: []` 合法且文字預覽提示沒有保留規則。
-- 不套用 YAML 的 force、remove_tags 或主題；`--yes`、`--force` 仍由命令列控制。不修改設定檔。
+- 沿用 Image YAML 格式，只採用 `keep` 排除清單與 `cleanup.unused_days`；`keep` 與命令列 `--keep` 合併為 OR，保留優先於 `--delete`。不指定 `--delete` 時清理其餘符合期限、未受保護的 image；明確 `keep: []` 合法且文字預覽提示沒有保留規則。
+- `--unused-days` 可覆寫檔案期限。不套用 YAML 的 force、remove_tags 或主題；`--yes`、`--force` 仍由命令列控制。啟用期限時拒絕 `--force`。不修改設定檔。
 - 每項刪除前及重新盤點後檢查設定檔原始內容，變更、消失或讀取失敗即停止後續刪除並回傳失敗，保留已完成結果。
 - JSON 的 keep 回報合併後規則。容器設定載入與 TUI 入口維持既有行為。
+
+## Image 定時清理（2026-09-23 使用者授權）
+
+- `images.yaml` 的 `cleanup.unused_days: 14` 讓 `dcl image clean` 使用持久化盤點紀錄；從首次成功觀察到 image 無任何容器引用且未受 keep 規則保護時開始計時。image 建立時間不當作最後使用時間。
+- 每次成功盤點更新紀錄；再次觀察到容器引用、命中保留規則、image 消失，或兩次成功觀察相隔超過 36 小時，都清除／重設該 image 的計時。此規則以每日盤點為證據，不能偵測兩次盤點之間短暫建立又移除的容器。
+- 滿設定天數且本次仍無容器引用、未命中 keep 的 image 才列為候選；預覽也會寫入首次觀察紀錄。紀錄遺失時重新計時；紀錄損壞、讀寫失敗時停止，不刪除。此模式拒絕 `--force`，執行前仍按既有規則重新盤點與比對。
+- systemd user timer 每天台北時間 03:15 執行此模式，從設定檔讀取 14 天期限，與 03:00 的容器 timer 分開；`Persistent=false`，漏跑不補執行。只清理 image，不觸及 Build Cache、volume、network 或容器。
 
 ## Delete 刪除新流程（2026-09-21 使用者直接授權）
 
@@ -85,10 +92,11 @@ keep:
 cleanup:
   remove_tags: false
   force: false
+  unused_days: 14
 ```
 
 - 以上規則僅為範例，不自動套入使用者設定。
-- `keep` 必須是字串陣列，清理選項必須是布林值；缺少選項時預設 false。
+- `keep` 必須是字串陣列；`remove_tags`、`force` 必須是布林值，缺少時預設 false；`unused_days` 若提供則須為正整數。
 - `theme` 預設 `terminal`，使用終端原生 ANSI 配色；也可為內建主題名稱。Ctrl+T 切換主題後自動保存此欄位，不連帶儲存尚未完成的規則或清理選項修改。外部修改衝突仍拒絕覆蓋。
 - 設定不存在時，TUI 可建立新設定；清理指令停止並提示先建立設定，不當成空白保留清單。
 - YAML 解析、結構驗證、讀取或 Regex 編譯失敗時，停止整次清理，指出錯誤，不退回無保護模式。
@@ -176,17 +184,18 @@ cleanup:
 
 ## 容器清理與設定分離（2026-09-22 使用者直接授權）
 
-本節擴充原本僅操作 image 的範圍，僅 `dcl container clean` 可以刪除容器；既有 image 入口不改變容器。排程交由外部 cron，不新增背景服務，不自動安裝刪除排程。
+本節擴充原本僅操作 image 的範圍，僅 `dcl container clean` 可以刪除容器；既有 image 入口不改變容器。排程由 systemd user timer 觸發一次性 service，不新增常駐服務。
 
 - image 設定預設為 `~/.config/docker-clean/images.yaml`；不再自動回退到舊 `config.yaml`。明確 `--config` 始終使用指定檔案。`dcl image clean` 同樣載入此設定檔的 keep，與命令列規則合併。
 - 容器使用獨立 `~/.config/docker-clean/containers.yaml`，可用 `--config` 指定；唯一規則來源為設定檔。必填 version: 1、正整數 stopped_days、keep。keep 支援 compose 與 container_names；缺省子清單為空，明確 keep: {} 合法且預覽警示無保留規則。
 - compose 是規則陣列，每條必填 project、可選 services（非空字串陣列）。省略 services 保留整個 project；提供時保留該 project 內列出的所有 service 實例。services: [] 為錯誤。container_names 為名稱陣列。全部精確比對，任一命中即保留；不同於 image tag Regex。Compose 以 Docker labels 識別，不猜測名稱。
-- 僅 status=exited 且最後 FinishedAt 距現在至少 stopped_days 天的容器符合。預設範例為 7 天，不以建立時間計算。created、dead、running、paused、restarting、removing 與含 Swarm task/service ID label 的容器一律跳過並說明。
+- 僅 status=exited 且最後 FinishedAt 距現在至少 stopped_days 天的容器符合。預設範例為 14 天，不以建立時間計算。created、dead、running、paused、restarting、removing 與含 Swarm task/service ID label 的容器一律跳過並說明。
+- 手動執行 `dcl container clean --ignore-age` 可忽略停止天數，只將已停止、未命中保留規則的非 Swarm 容器列為候選；預設仍只預覽，`--yes` 才刪除。03:00 timer 不帶此旗標，繼續採用設定檔的 14 天期限。
 - 日期缺失、零值、無時區、未來時間或無法解析時停止清理；設定缺失、未知欄位、型別錯誤、無效結構與查詢失敗同樣停止，不視為無保留規則。
 - 預設只預覽；--yes 執行，--json 輸出單一物件，含模式、候選／保留原因、完整 ID、名稱、狀態、時間、labels、掛載、實際結果與錯誤。文字輸出提示可寫層損失與掛載保留。預覽先完成，才能逐項執行。
 - 每項刪除前重讀設定、inspect 同一完整 ID，比對名稱、狀態、最後啟停時間、labels 與掛載。設定改變或查詢失敗停止；容器改變跳過。容器在 ls／inspect 之間消失也視為查詢失敗，停止本次清理，不自動重試。只呼叫 container rm ID，不帶 force 或 volumes，不清理 image/network/cache。匿名 volume 保留但不保證重新建立時自動掛回。
 - 個別刪除失敗可繼續，保留已完成回報；退出碼 0=成功／預覽／無候選／狀態變動跳過，1=設定查詢操作失敗，2=命令語法錯誤。沒有 Docker 交易鎖，重新檢查不能消除所有競態。
-- 每天 03:00 排程由使用者啟用 cron；flock 防止排程重疊，輸出導向紀錄。不得自動搭配 image prune。
+- 每天台北時間 03:00 由 systemd user timer 執行容器清理；使用者須啟用 linger，登出後排程才會持續運作。`Persistent=false`，錯過的排程不在開機後補跑。同一 service 執行中不重複啟動，輸出保存在 journal。不得自動搭配 image prune。
 - 驗證涵蓋精確保留與多副本、停止時間界線、Swarm／其他狀態、錯誤設定、設定變更與容器競態、image 預設路徑不回退及原功能回歸。主機只允許唯讀預覽；破壞性驗證使用隔離 Engine。
 
 ## CLI 改名（2026-09-22 使用者直接授權）

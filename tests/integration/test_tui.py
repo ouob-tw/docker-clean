@@ -1,6 +1,6 @@
 from textual.widgets import Button, Checkbox, DataTable, Static, TextArea
 
-from docker_clean.config import Config, load
+from docker_clean.config import Config, load, save
 from docker_clean.engine import Image
 from docker_clean.tui import CleanerApp
 
@@ -20,6 +20,7 @@ class DockerFixture:
 
 async def test_edit_save_reopen_preview_invalidation_and_cancel(tmp_path):
     path = tmp_path / "config.yaml"
+    save(path, Config(unused_days=14), None)
     docker = DockerFixture()
     app = CleanerApp(path, docker)
     async with app.run_test(size=(140, 60)) as pilot:
@@ -29,7 +30,7 @@ async def test_edit_save_reopen_preview_invalidation_and_cancel(tmp_path):
         await pilot.pause(0.3)
         assert "保留" in str(app.query_one("#output", Static).render())
         await pilot.click("#save")
-        assert load(path)[0] == Config(("^other:1$",))
+        assert load(path)[0] == Config(("^other:1$",), unused_days=14)
         rules.load_text("")
         await pilot.pause(0.3)
         await pilot.click("#save")
@@ -126,9 +127,8 @@ async def test_compact_columns_wrap_tags_and_keep_full_id_in_preview(tmp_path):
 
 
 async def test_theme_follows_terminal_and_persists_without_saving_draft_rules(tmp_path):
-    from docker_clean.config import save
     path = tmp_path / "config.yaml"
-    save(path, Config(("^saved:",)), None)
+    save(path, Config(("^saved:",), unused_days=14), None)
     app = CleanerApp(path, DockerFixture())
     async with app.run_test(size=(120, 40)) as pilot:
         assert app.theme == "terminal"
@@ -136,7 +136,7 @@ async def test_theme_follows_terminal_and_persists_without_saving_draft_rules(tm
         app.query_one("#rules", TextArea).load_text("unfinished[")
         app.theme = "nord"
         await pilot.pause()
-        assert load(path)[0] == Config(("^saved:",), theme="nord")
+        assert load(path)[0] == Config(("^saved:",), theme="nord", unused_days=14)
         assert app.query_one("#rules", TextArea).text == "unfinished["
     reopened = CleanerApp(path, DockerFixture())
     async with reopened.run_test(size=(120, 40)) as pilot:

@@ -1,5 +1,5 @@
 version: 1
-stopped_days: 7
+stopped_days: 14
 
 keep:
   compose:

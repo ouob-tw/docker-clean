@@ -1,0 +1,7 @@
+[Unit]
+Description=Clean stopped Docker containers with Docker Clean
+
+[Service]
+Type=oneshot
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/swy/.local/bin/dcl container clean --config /home/swy/.config/docker-clean/containers.yaml --yes

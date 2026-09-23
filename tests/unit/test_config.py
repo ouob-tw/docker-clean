@@ -6,6 +6,8 @@ from docker_clean.config import CleanError, Config, load, save
 @pytest.mark.parametrize("text", ["", "[]", "keep: null", "keep: x", "keep: [1]",
     "keep: ['[']", "keep: []\ncleanup: []", "keep: []\ncleanup: {force: 'false'}",
     "keep: []\ncleanup: {remove_tags: 1}", "keep: []\ncleanup: {forcee: true}",
+    "keep: []\ncleanup: {unused_days: 0}", "keep: []\ncleanup: {unused_days: true}",
+    "keep: []\ncleanup: {unused_days: '14'}",
     "keep: []\nother: []", "keep: [", "keep: []\ntheme: []", "keep: []\ntheme: unknown-theme"])
 def test_invalid_configuration_fails_closed(tmp_path, text):
     path = tmp_path / "config.yaml"
@@ -19,7 +21,7 @@ def test_create_roundtrip_and_external_change(tmp_path):
     assert load(path, allow_missing=True) == (Config(), None)
     with pytest.raises(CleanError, match="設定不存在"):
         load(path)
-    config = Config((r"^postgres:16$",), True, True)
+    config = Config((r"^postgres:16$",), True, True, unused_days=14)
     revision = save(path, config, None)
     assert load(path) == (config, revision)
     path.write_text("keep: []")

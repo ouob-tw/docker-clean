@@ -92,7 +92,7 @@ def inspect(docker: Docker, ids: list[str]) -> list[Container]:
         raise CleanError(f"容器盤點資料不完整: {exc}") from exc
 
 
-def reason(c: Container, policy: Policy, now: datetime) -> tuple[bool, str, str]:
+def reason(c: Container, policy: Policy, now: datetime, ignore_age: bool = False) -> tuple[bool, str, str]:
     if c.name in policy.names:
         return False, "保留：容器名稱", "keep"
     project = c.labels.get("com.docker.compose.project")
@@ -111,16 +111,19 @@ def reason(c: Container, policy: Policy, now: datetime) -> tuple[bool, str, str]
     except ValueError as exc:
         raise CleanError(f'{c.name} 停止時間無效: {c.finished}') from exc
     age = now - finished
-    eligible = age.total_seconds() >= policy.stopped_days * 86400
+    eligible = ignore_age or age.total_seconds() >= policy.stopped_days * 86400
     return eligible, f"停止 {age.total_seconds() / 86400:.1f} 天", "candidate" if eligible else "too_recent"
 
 
 def render_preview(entries: list[dict], days: int | None, path: Path,
-                   show_all: bool, complete: bool, empty_keep: bool, yes: bool) -> None:
+                   show_all: bool, complete: bool, empty_keep: bool, yes: bool,
+                   ignore_age: bool = False) -> None:
     if empty_keep:
-        print("沒有保留規則；所有符合停止期限的非 Swarm 容器均可能刪除。")
+        print("沒有保留規則；所有已停止的非 Swarm 容器均可能刪除。" if ignore_age else
+              "沒有保留規則；所有符合停止期限的非 Swarm 容器均可能刪除。")
     title = "容器清理" if yes else "容器清理預覽"
-    print(f"{title} | 停止滿 {days} 天 | 設定 {path}" if days is not None else title)
+    scope = "忽略停止期限" if ignore_age else f"停止滿 {days} 天"
+    print(f"{title} | {scope} | 設定 {path}" if days is not None else title)
     if not complete and not entries:
         print("盤點未完成。")
         return
@@ -153,7 +156,8 @@ def render_preview(entries: list[dict], days: int | None, path: Path,
         print("僅預覽，未修改 Docker；加上 --yes 才執行。")
 
 
-def run(path: Path, yes: bool, json_output: bool, show_all: bool = False) -> int:
+def run(path: Path, yes: bool, json_output: bool, show_all: bool = False,
+        ignore_age: bool = False) -> int:
     entries: list[dict] = []
     results: list[dict] = []
     error = None
@@ -170,13 +174,13 @@ def run(path: Path, yes: bool, json_output: bool, show_all: bool = False) -> int
         now = datetime.now(timezone.utc)
         candidates = []
         for c in inspect(docker, ids):
-            delete, why, category = reason(c, policy, now)
+            delete, why, category = reason(c, policy, now, ignore_age)
             entries.append({"container": asdict(c), "delete": delete, "reason": why, "category": category})
             if delete:
                 candidates.append(c)
         complete = True
         if not json_output:
-            render_preview(entries, days, path, show_all, complete, empty_keep, yes)
+            render_preview(entries, days, path, show_all, complete, empty_keep, yes, ignore_age)
             rendered = True
         if yes:
             for c in candidates:
@@ -185,7 +189,7 @@ def run(path: Path, yes: bool, json_output: bool, show_all: bool = False) -> int
                 current = inspect(docker, [c.id])[0]
                 if read_bytes(path) != revision:
                     raise CleanError("設定已變更；停止清理")
-                if current != c or not reason(current, policy, datetime.now(timezone.utc))[0]:
+                if current != c or not reason(current, policy, datetime.now(timezone.utc), ignore_age)[0]:
                     results.append({"id": c.id, "name": c.name, "status": "跳過", "detail": "容器狀態已變更"})
                     continue
                 try:
@@ -198,7 +202,7 @@ def run(path: Path, yes: bool, json_output: bool, show_all: bool = False) -> int
     ok = error is None and not any(r["status"] == "失敗" for r in results)
     payload = {"mode": "execute" if yes else "preview", "ok": ok, "empty_keep": empty_keep,
                "entries": entries, "results": results, "error": error,
-               "stopped_days": days, "plan_complete": complete,
+               "stopped_days": days, "ignore_age": ignore_age, "plan_complete": complete,
                "summary": {"total": len(entries), **{
                    key: sum(e["category"] == key for e in entries)
                    for key in ("candidate", "keep", "too_recent", "swarm", "state")}}}
@@ -206,7 +210,7 @@ def run(path: Path, yes: bool, json_output: bool, show_all: bool = False) -> int
         print(json.dumps(payload, ensure_ascii=False))
     else:
         if not rendered:
-            render_preview(entries, days, path, show_all, complete, empty_keep, yes)
+            render_preview(entries, days, path, show_all, complete, empty_keep, yes, ignore_age)
         for result in results:
             detail = "" if result["status"] == "刪除" else f" | {result['detail']}"
             print(f"{result['name']} | {result['status']} | {result['id'][:12]}{detail}")

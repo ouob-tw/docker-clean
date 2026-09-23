@@ -190,3 +190,66 @@ def test_old_config_requires_explicit_path(run, tmp_path):
     code, payload = invoke()
     assert code == 0 and payload["keep"] == ["other"]
     assert not docker.calls
+
+
+def test_unused_days_preview_starts_clock_then_allows_aged_delete(run, tmp_path, monkeypatch):
+    docker, invoke = run
+    state = tmp_path / "state.json"
+    monkeypatch.setattr(automation, "default_state_path", lambda: state)
+    code, payload = invoke("--unused-days", "21")
+    assert code == 0 and not docker.calls
+    assert not [entry for entry in payload["entries"] if entry["targets"]]
+    data = json.loads(state.read_text())
+    for item in data["images"].values():
+        from datetime import datetime, timedelta, timezone
+        now = datetime.now(timezone.utc)
+        item["since"] = (now - timedelta(days=22)).isoformat()
+        item["last_seen"] = (now - timedelta(days=1)).isoformat()
+    state.write_text(json.dumps(data))
+    code, payload = invoke("--unused-days", "21", "--yes")
+    assert code == 0 and payload["mode"] == "execute"
+    assert docker.calls == [("a", False), ("b", False), ("c", False)]
+
+
+def test_unused_days_rejects_force_and_bad_state(run, tmp_path, monkeypatch):
+    docker, invoke = run
+    state = tmp_path / "state.json"
+    monkeypatch.setattr(automation, "default_state_path", lambda: state)
+    code, payload = invoke("--unused-days", "21", "--force", "--yes")
+    assert code == 1 and not payload["ok"] and docker.snapshots == 0
+    state.write_text("broken")
+    code, payload = invoke("--unused-days", "21", "--yes")
+    assert code == 1 and not payload["ok"] and not docker.calls
+
+
+def test_configured_unused_days_applies_without_cli_flag(run, tmp_path, monkeypatch):
+    docker, invoke = run
+    state = tmp_path / "state.json"
+    monkeypatch.setattr(automation, "default_state_path", lambda: state)
+    (tmp_path / ".config/docker-clean/images.yaml").write_text(
+        "keep: []\ncleanup: {unused_days: 14}\n")
+    code, payload = invoke("--yes")
+    assert code == 0 and payload["unused_days"] == 14
+    assert not docker.calls and state.exists()
+    code, payload = invoke("--unused-days", "21")
+    assert code == 0 and payload["unused_days"] == 21
+
+
+def test_delete_filter_preserves_other_images_unused_time(run, tmp_path, monkeypatch):
+    docker, invoke = run
+    state = tmp_path / "state.json"
+    monkeypatch.setattr(automation, "default_state_path", lambda: state)
+    (tmp_path / ".config/docker-clean/images.yaml").write_text(
+        "keep: []\ncleanup: {unused_days: 14}\n")
+    code, _ = invoke()
+    assert code == 0
+    before = json.loads(state.read_text())["images"]
+    assert set(before) == set(docker.images)
+
+    code, payload = invoke("--delete", "^app:")
+    assert code == 0
+    after = json.loads(state.read_text())["images"]
+    assert after.keys() == before.keys()
+    assert all(after[key]["since"] == value["since"] for key, value in before.items())
+    assert all(entry["reason"] == "未命中 delete 規則"
+               for entry in payload["entries"] if entry["image"]["id"] != "a")

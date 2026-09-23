@@ -1,0 +1,7 @@
+[Unit]
+Description=Clean images after configured unused days with Docker Clean
+
+[Service]
+Type=oneshot
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/swy/.local/bin/dcl image clean --config /home/swy/.config/docker-clean/images.yaml --yes --json

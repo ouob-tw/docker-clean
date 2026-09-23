@@ -47,10 +47,11 @@ def cli(tmp_path, monkeypatch, capsys):
     fake = Fake()
     monkeypatch.setattr(containers, 'Docker', lambda: fake)
 
-    def run(execute=False, json_output=True, show_all=False):
+    def run(execute=False, json_output=True, show_all=False, ignore_age=False):
         monkeypatch.setattr(sys, 'argv', ['dcl', 'container', 'clean', '--config', str(path),
                                        *(['--json'] if json_output else []), *(['--yes'] if execute else []),
-                                       *(['--all'] if show_all else [])])
+                                       *(['--all'] if show_all else []),
+                                       *(['--ignore-age'] if ignore_age else [])])
         code = automation.main()
         output = capsys.readouterr().out
         return code, json.loads(output) if json_output else output
@@ -78,6 +79,33 @@ def test_recently_stopped_old_container_kept(cli):
     fake, _, _, run = cli
     fake.items = [item(days=1)]
     assert run(True)[0] == 0 and not fake.deleted
+
+
+def test_manual_ignore_age_only_deletes_unprotected_exited_containers(cli):
+    fake, path, policy, run = cli
+    policy['stopped_days'] = 14
+    policy['keep'] = {'container_names': ['kept']}
+    path.write_text(yaml.safe_dump(policy))
+    fake.items = [item('recent', days=1), item('kept', days=1),
+                  item('swarm', days=1, labels={'com.docker.swarm.task.id': 'task'}),
+                  item('running', status='running', days=1)]
+    _, default = run()
+    assert default['summary']['candidate'] == 0
+    code, preview = run(ignore_age=True)
+    assert code == 0 and preview['ignore_age'] and not fake.deleted
+    assert [e['container']['name'] for e in preview['entries'] if e['delete']] == ['recent']
+    code, result = run(execute=True, ignore_age=True)
+    assert code == 0 and fake.deleted == ['recent']
+    assert result['stopped_days'] == 14
+
+
+def test_manual_ignore_age_rechecks_status_before_delete(cli):
+    fake, _, _, run = cli
+    fake.items = [item(days=1)]
+    fake.change = lambda: fake.items[0]['State'].update(Status='running')
+    code, payload = run(execute=True, ignore_age=True)
+    assert code == 0 and not fake.deleted
+    assert payload['results'][0]['status'] == '跳過'
 
 
 @pytest.mark.parametrize('label', ['com.docker.swarm.task.id', 'com.docker.swarm.service.id'])

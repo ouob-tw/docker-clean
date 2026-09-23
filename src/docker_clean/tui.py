@@ -184,7 +184,8 @@ class CleanerApp(App):
     def current(self) -> Config:
         config = Config(tuple(self.query_one("#rules", TextArea).text.splitlines()),
                         self.query_one("#remove-tags", Checkbox).value,
-                        self.query_one("#force", Checkbox).value, self.theme)
+                        self.query_one("#force", Checkbox).value, self.theme,
+                        self.saved_config.unused_days)
         config.validate()
         return config
 
