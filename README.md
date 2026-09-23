@@ -118,14 +118,14 @@ uv run dcl container clean --ignore-age --yes               # 忽略 14 天期�
 
 先準備上述兩份 YAML，確認保留清單。**image 排程要等待 14 天，必須在 `images.yaml` 設定 `cleanup.unused_days: 14`；省略就沒有天數限制。**
 
-在專案目錄執行以下前置步驟。service 範例使用 `/home/swy`，其他帳號須先將複製後的 service 路徑改成自己的路徑。
+在專案目錄執行以下前置步驟。service 用 `%h` 代表執行使用者的家目錄，工具安裝於 `~/.local/bin`，設定放在 `~/.config/docker-clean`。若使用其他安裝或設定目錄，修改 service 的 `ExecStart` 即可。
 
 ```sh
-uv tool install --reinstall .
+UV_TOOL_BIN_DIR="$HOME/.local/bin" uv tool install --reinstall .
 mkdir -p ~/.config/systemd/user
 cp deploy/systemd/*.service deploy/systemd/*.timer ~/.config/systemd/user/
-dcl container clean                 # 檢查容器候選
-dcl image clean                     # 檢查 image 候選，開始記錄無引用時間
+~/.local/bin/dcl container clean     # 檢查容器候選
+~/.local/bin/dcl image clean         # 檢查 image 候選，開始記錄無引用時間
 ```
 
 確認預覽後，啟用需要的 timer；只需其中一種清理時，執行對應那一行即可。
