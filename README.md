@@ -55,11 +55,11 @@ cleanup:
   unused_days: 14
 ```
 
-規則以 Python `re.search` 比對完整 tag；多條規則採 OR。同一 image ID 只要有一個 tag 命中，就保留整個 image。`keep: []` 表示沒有保留規則，預覽時請仔細確認候選範圍。
+`keep: []` 表示沒有保留規則。`unused_days` 只適用於下方的 `dcl image clean`，不限制 `image keep` 介面的清理。
 
 ### 用指令預覽或執行
 
-`image clean` 會讀取上述設定檔的 `keep` 與 `cleanup.unused_days`；設定檔不存在或無效時會停止。預設只預覽，加入 `--yes` 才執行。範例中的 14 天門檻也會套用於下列指令。
+`image clean` 只採用上述設定檔的 `keep` 與 `cleanup.unused_days`，不採用 `force`、`remove_tags`；設定檔不存在或無效時會停止。預設只預覽，加入 `--yes` 才執行。範例中的 14 天門檻也會套用於下列指令。
 
 ```sh
 uv run dcl image clean                                      # 預覽已達期限且未受保護的 image
@@ -70,16 +70,11 @@ uv run dcl image clean --delete '^myapp:dev-' --yes          # 執行刪除
 
 `--delete` 和 `--keep` 可重複使用；任何 tag 命中都作用於整個 image ID。預設跳過被容器引用的 image；未設定 `unused_days` 時，只有明確加上 `--force` 才要求 Docker 強制刪除。可用 `--config PATH` 指定設定檔，或用 `--json` 取得機器可讀的預覽與結果。
 
-設定 `cleanup.unused_days: 14` 後，只清理每日盤點持續無容器引用滿 14 天的 image：
+設定 `cleanup.unused_days: 14` 後，從首次盤點發現「無任何容器引用、未受保留規則保護」開始計時，滿 14 天才列為候選，**不看 image 建立日期**。預覽也會更新紀錄；未設定期限時，沒有天數限制。可用 `--unused-days DAYS` 臨時覆寫，啟用期限時不可搭配 `--force`。
 
-```sh
-uv run dcl image clean          # 只預覽 Docker；開始記錄無引用時間
-uv run dcl image clean --yes    # 只刪除已達期限的候選
-```
+紀錄存於 `~/.local/state/docker-clean/image-unused.json`。再次觀察到容器引用、命中保留規則、image 消失，或盤點間隔超過 36 小時，都會清除或重設計時。紀錄遺失會重新計時，損壞則停止清理。每日盤點無法偵測兩次檢查間短暫出現又移除的容器。
 
-紀錄存於 `~/.local/state/docker-clean/image-unused.json`。image 被容器引用、命中 `images.yaml` 的 `keep` 規則，或盤點中斷超過 36 小時，計時就重新開始；紀錄損壞時停止清理。這是每日盤點的結果，無法偵測兩次盤點間短暫出現又移除的容器。可用 `--unused-days DAYS` 臨時覆寫設定；啟用期限時不可搭配 `--force`。
-
-舊入口 `docker-clean keep`、`docker-clean delete` 和 `docker-clean clean` 仍可使用；其中 `docker-clean clean` 會要求輸入 `DELETE` 確認。
+舊入口 `docker-clean keep`、`docker-clean delete` 和 `docker-clean clean` 仍可使用；其中 `docker-clean clean` 不套用 `unused_days`，並要求輸入 `DELETE` 確認。
 
 ## 清理已停止的容器
 
@@ -108,34 +103,67 @@ uv run dcl container clean --ignore-age --yes               # 忽略 14 天期�
 
 容器設定不存在或無效時會停止。`--ignore-age` 只供手動清理；仍會跳過保留規則、非 exited 狀態與 Swarm 容器，且需加 `--yes` 才會刪除。`--yes` 會刪除候選容器及容器內的檔案，保留掛載資料；不使用 force，也不刪除 image。
 
-### 每天 03:00 自動清理
+## 自動清理
 
-確認保留清單與預覽後，可安裝 [systemd user timer](deploy/systemd/docker-clean-container.timer) 與 [service](deploy/systemd/docker-clean-container.service)。範例使用 `/home/swy` 的安裝與設定路徑；其他帳號須先修改 service 內的路徑。`loginctl enable-linger` 需要管理員權限，讓 user timer 在登出後仍可執行。
+提供兩組獨立的 [systemd user 排程](deploy/systemd)，啟用後到點直接執行刪除，不再詢問確認：
 
-```sh
-uv run dcl container clean
-mkdir -p ~/.config/systemd/user
-cp deploy/systemd/docker-clean-container.{service,timer} ~/.config/systemd/user/
-systemctl --user daemon-reload
-systemctl --user enable --now docker-clean-container.timer
-systemctl --user list-timers docker-clean-container.timer
-journalctl --user -u docker-clean-container.service
-```
+| 台北時間 | 對象 | 清理條件（依上述設定範例） |
+|---|---|---|
+| 每天 03:00 | 容器 | `exited` 滿 14 天、未受保留規則保護，且非 Swarm 容器 |
+| 每天 03:15 | image | 每日盤點無容器引用滿 14 天，且未受保留規則保護 |
 
-timer 每天台北時間 03:00 執行 `dcl container clean --yes`。關機期間錯過的排程不補跑；同一 service 執行中不會重複啟動。停用可執行 `systemctl --user disable --now docker-clean-container.timer`。
+**timer 決定何時執行，service 決定執行哪個指令。** service 使用 `Type=oneshot`，跑完就結束。錯過排程不補跑；同一 service 尚未結束時不會重複啟動。
 
-image 另用 [03:15 timer](deploy/systemd/docker-clean-image.timer) 與 [service](deploy/systemd/docker-clean-image.service) 每日檢查。確認 `images.yaml` 的保留規則、安裝新版 `dcl` 後，啟用排程：
+### 安裝與啟用
+
+先準備上述兩份 YAML，確認保留清單。**image 排程要等待 14 天，必須在 `images.yaml` 設定 `cleanup.unused_days: 14`；省略就沒有天數限制。**
+
+在專案目錄執行以下前置步驟。service 範例使用 `/home/swy`，其他帳號須先將複製後的 service 路徑改成自己的路徑。
 
 ```sh
 uv tool install --reinstall .
-cp deploy/systemd/docker-clean-image.{service,timer} ~/.config/systemd/user/
-systemctl --user daemon-reload
-systemctl --user enable --now docker-clean-image.timer
-systemctl --user list-timers docker-clean-image.timer
-journalctl --user -u docker-clean-image.service
+mkdir -p ~/.config/systemd/user
+cp deploy/systemd/*.service deploy/systemd/*.timer ~/.config/systemd/user/
+dcl container clean                 # 檢查容器候選
+dcl image clean                     # 檢查 image 候選，開始記錄無引用時間
 ```
 
-需要永久保留的 image，請在 `images.yaml` 的 `keep` 加入精確 Regex，例如 `'^portainer/helper-reset-password:latest$'`；修改後會在下次盤點生效。暫停 image 排程可執行 `systemctl --user disable --now docker-clean-image.timer`。
+確認預覽後，啟用需要的 timer；只需其中一種清理時，執行對應那一行即可。
+
+```sh
+sudo loginctl enable-linger "$USER"  # 登出後仍能執行排程
+systemctl --user daemon-reload
+systemctl --user enable --now docker-clean-container.timer
+systemctl --user enable --now docker-clean-image.timer
+```
+
+### 修改規則、參數與時間
+
+| 想修改什麼 | 修改位置 | 生效方式 |
+|---|---|---|
+| 保留清單、清理天數 | `~/.config/docker-clean/` 下的 `containers.yaml`／`images.yaml` | 下次執行自動讀取 |
+| 指令參數、設定檔路徑 | service 的 `ExecStart` | 重新載入後，下次執行使用 |
+| 排程時間 | timer 的 `OnCalendar` | 重新載入並重啟 timer |
+
+例如把 image 排程改成每天 04:00：
+
+```sh
+systemctl --user edit --full docker-clean-image.timer
+# 將 OnCalendar 改成：OnCalendar=*-*-* 04:00:00 Asia/Taipei
+systemctl --user restart docker-clean-image.timer
+```
+
+修改執行參數則用 `systemctl --user edit --full docker-clean-image.service` 編輯 `ExecStart`。`systemctl edit` 儲存後會自動重新載入；若直接編輯檔案，需另執行 `systemctl --user daemon-reload`。
+
+### 查看與停用
+
+```sh
+systemctl --user list-timers 'docker-clean-*'
+journalctl --user -u docker-clean-image.service
+systemctl --user disable --now docker-clean-image.timer
+```
+
+查看容器紀錄或停用容器排程，將最後兩行的 `image` 換成 `container`。
 
 ## 操作邊界
 

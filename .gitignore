@@ -1,5 +1,8 @@
 .lat/
 .worktrees/
+.serena/
+*.swp
+*.swo
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -154,6 +157,8 @@ activemq-data/
 
 # Environments
 .env
+.env.*
+!.env.example
 .envrc
 .venv
 env/
