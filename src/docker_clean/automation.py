@@ -62,7 +62,10 @@ def main() -> int:
             raise CleanError("unused_days 必須大於零，且不可搭配 --force")
         if any(not value.strip() for value in args.keep + args.delete):
             raise CleanError("Regex 不可空白；全部匹配請明確使用 .*")
-        config = Config(keep=saved.keep + tuple(args.keep), force=args.force)
+        # Untag one by one without force so multi-tag images need no force and running
+        # containers keep their tags; with --force keep deleting by ID.
+        config = Config(keep=saved.keep + tuple(args.keep), remove_tags=not args.force,
+                        force=args.force)
         config.validate()
         try:
             patterns = [re.compile(value) for value in args.delete]

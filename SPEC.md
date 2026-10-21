@@ -21,6 +21,7 @@
 - 比照 container clean：`dcl image clean` 預設讀取 `~/.config/docker-clean/images.yaml`；`--config` 指定時只讀指定檔案。設定缺失、讀取或驗證失敗時停止，不因提供命令列規則而略過。
 - 沿用 Image YAML 格式，只採用 `keep` 排除清單與 `cleanup.unused_days`；`keep` 與命令列 `--keep` 合併為 OR，保留優先於 `--delete`。不指定 `--delete` 時清理其餘符合期限、未受保護的 image；明確 `keep: []` 合法且文字預覽提示沒有保留規則。
 - `--unused-days` 可覆寫檔案期限。不套用 YAML 的 force、remove_tags 或主題；`--yes`、`--force` 仍由命令列控制。啟用期限時拒絕 `--force`。不修改設定檔。
+- 未指定 `--force` 時逐一正常移除候選的全部 tag，無 tag 者按 ID 正常刪除；多 tag image 不需 force 即可清理，最後一個 tag 移除時由 Docker 刪除 image。指定 `--force` 時維持按 ID 使用 force 刪除。
 - 每項刪除前及重新盤點後檢查設定檔原始內容，變更、消失或讀取失敗即停止後續刪除並回傳失敗，保留已完成結果。
 - JSON 的 keep 回報合併後規則。容器設定載入與 TUI 入口維持既有行為。
 

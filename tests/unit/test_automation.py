@@ -40,6 +40,16 @@ def run(monkeypatch, capsys, tmp_path):
             self.calls.append((target, force))
             if self.delete_error:
                 raise CleanError("delete failed")
+            # Like Docker: untag by name, delete the image once its last tag is gone.
+            for key, image in list(self.images.items()):
+                if target in image.tags:
+                    tags = tuple(tag for tag in image.tags if tag != target)
+                    self.images = {**self.images, key: replace(image, tags=tags)}
+                    if tags:
+                        return "Untagged: " + target
+                    del self.images[key]
+                    return f"Untagged: {target}\nDeleted: {key}"
+            self.images = {k: v for k, v in self.images.items() if k != target}
             return "Deleted: " + target
 
     docker = FakeDocker()
@@ -70,7 +80,7 @@ def test_keep_only_and_repeated_rules(run):
 def test_delete_multiple_rules_and_none(run):
     docker, invoke = run
     code, payload = invoke("--delete", "^None$", "--delete", "^other:", "--yes")
-    assert code == 0 and docker.calls == [("b", False), ("c", False)]
+    assert code == 0 and docker.calls == [("other:dev", False), ("c", False)]
 
 
 @pytest.mark.parametrize("args", [("--keep", ""), ("--delete", " "),
@@ -101,7 +111,7 @@ def test_execution_rechecks_and_reports_failures(run, failure):
     if failure != "delete_error":
         assert not docker.calls
     else:
-        assert len(docker.calls) == 3
+        assert len(docker.calls) == 4
     assert payload["results"]
 
 
@@ -128,6 +138,19 @@ def test_custom_config_merges_keep_and_ignores_cleanup_options(run, tmp_path):
     code, payload = invoke("--config", str(path), "--keep", "other", "--delete", ".*", "--yes")
     assert code == 0 and payload["keep"] == ["stable", "other"]
     assert not payload["force"] and docker.calls == [("c", False)]
+
+
+def test_multi_tag_image_untagged_one_by_one_without_force(run):
+    docker, invoke = run
+    code, payload = invoke("--delete", "app", "--yes")
+    assert code == 0 and payload["ok"]
+    assert docker.calls == [("app:dev", False), ("app:stable", False)]
+
+
+def test_force_still_deletes_by_id(run):
+    docker, invoke = run
+    code, payload = invoke("--delete", "app", "--force", "--yes")
+    assert code == 0 and docker.calls == [("a", True)]
 
 
 @pytest.mark.parametrize("content", [None, "keep: [", "keep: ['[']", "keep: wrong", "unknown: []"])
@@ -171,7 +194,7 @@ def test_config_change_stops_deletion(run, tmp_path, monkeypatch, stage):
         monkeypatch.setattr(docker, "remove", changed_remove)
     code, payload = invoke("--yes")
     assert code == 1 and not payload["ok"]
-    assert docker.calls == ([("a", False)] if stage == "after_delete" else [])
+    assert docker.calls == ([("app:dev", False)] if stage == "after_delete" else [])
     assert any("設定已改變" in result["detail"] for result in payload["results"])
 
 
@@ -208,7 +231,8 @@ def test_unused_days_preview_starts_clock_then_allows_aged_delete(run, tmp_path,
     state.write_text(json.dumps(data))
     code, payload = invoke("--unused-days", "21", "--yes")
     assert code == 0 and payload["mode"] == "execute"
-    assert docker.calls == [("a", False), ("b", False), ("c", False)]
+    assert docker.calls == [("app:dev", False), ("app:stable", False), ("other:dev", False),
+                            ("c", False)]
 
 
 def test_unused_days_rejects_force_and_bad_state(run, tmp_path, monkeypatch):
