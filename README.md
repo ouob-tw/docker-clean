@@ -49,13 +49,16 @@ theme: terminal
 keep:
   - '^postgres:16$'
   - '^myorg/.*:.*$'
+keep_latest:
+  - match: rollback
+    count: 3
 cleanup:
   remove_tags: false
   force: false
   unused_days: 14
 ```
 
-`keep: []` 表示沒有保留規則。`unused_days` 只適用於下方的 `dcl image clean`，不限制 `image keep` 介面的清理。
+`keep: []` 表示沒有保留規則。`keep_latest`（可省略）讓同一個 repository 中、tag 命中 `match` 的 image 只保留建立時間最新的 `count` 個；同一 image 有多個命中 tag 只算一個。較舊的不再受保護，依一般規則（容器引用、`unused_days`）處理。`keep` 命中仍優先保留。`keep_latest` 只能直接編輯 YAML，TUI 儲存時會原樣保留。`unused_days` 只適用於下方的 `dcl image clean`，不限制 `image keep` 介面的清理。
 
 ### 用指令預覽或執行
 

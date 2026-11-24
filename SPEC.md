@@ -93,6 +93,10 @@ keep:
   - '^postgres:16$'
   - '^myorg/.*:.*$'
 
+keep_latest:
+  - match: rollback
+    count: 3
+
 cleanup:
   remove_tags: false
   force: false
@@ -100,6 +104,7 @@ cleanup:
 ```
 
 - 以上規則僅為範例，不自動套入使用者設定。
+- `keep_latest` 可省略；若提供須為清單，每項僅含非空 Regex 字串 `match` 與正整數 `count`。以 `re.search` 比對完整 tag，依 tag 最後一個冒號前的 repository 分組（registry 連接埠屬於 repository），每組依 image 建立時間保留最新 `count` 個 image ID，同一 ID 多個命中 tag 只算一個；建立時間無法解析時視為最新。未入選者不受此規則保護，改依容器引用、`unused_days` 等一般規則處理；`keep` 命中優先。TUI 不提供編輯，但儲存時保留原值；JSON 回報 `keep_latest`。
 - `keep` 必須是字串陣列；`remove_tags`、`force` 必須是布林值，缺少時預設 false；`unused_days` 若提供則須為正整數。
 - `theme` 預設 `terminal`，使用終端原生 ANSI 配色；也可為內建主題名稱。Ctrl+T 切換主題後自動保存此欄位，不連帶儲存尚未完成的規則或清理選項修改。外部修改衝突仍拒絕覆蓋。
 - 設定不存在時，TUI 可建立新設定；清理指令停止並提示先建立設定，不當成空白保留清單。

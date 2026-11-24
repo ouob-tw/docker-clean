@@ -1,6 +1,7 @@
 from dataclasses import dataclass, replace
 from pathlib import Path
 from collections.abc import Callable, Iterable
+from datetime import datetime, timezone
 import re
 
 from .config import CleanError, Config, read_bytes
@@ -22,13 +23,44 @@ class Preview:
     entries: tuple[Entry, ...]
 
 
+def _created(image: Image) -> datetime:
+    try:
+        value = datetime.fromisoformat(image.created)
+    except ValueError:
+        # Unknown age must never make an image look old enough to release.
+        return datetime.max.replace(tzinfo=timezone.utc)
+    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+
+
+def _latest_matches(config: Config, images: Iterable[Image]) -> dict[str, list[str]]:
+    """Per repository, protect the newest `count` images having a tag matching each rule."""
+    reasons: dict[str, list[str]] = {}
+    for value, count in config.keep_latest:
+        pattern = re.compile(value)
+        repositories: dict[str, dict[str, Image]] = {}
+        for image in images:
+            for tag in image.tags:
+                if pattern.search(tag):
+                    # The tag follows the last colon; a registry port precedes a slash.
+                    repositories.setdefault(tag.rsplit(":", 1)[0], {})[image.id] = image
+        for repository, members in repositories.items():
+            newest = sorted(members.values(), key=lambda i: (_created(i), i.id), reverse=True)
+            for image in newest[:count]:
+                reasons.setdefault(image.id, []).extend(
+                    f"{tag} 符合 {value!r}，屬 {repository} 最新 {count} 個" for tag in image.tags
+                    if tag.rsplit(":", 1)[0] == repository and pattern.search(tag))
+    return reasons
+
+
 def plan(config: Config, images: dict[str, Image], revision: bytes = b"") -> Preview:
     config.validate()
     patterns = [(value, re.compile(value)) for value in config.keep]
+    latest = _latest_matches(config, images.values())
     entries = []
     for image in sorted(images.values(), key=lambda image: image.id):
         matches = [f"{tag} 符合 {value!r}" for tag in image.tags
                    for value, pattern in patterns if pattern.search(tag)]
+        matches += latest.get(image.id, [])
         if matches:
             entries.append(Entry(image, "保留", "; ".join(matches)))
         elif image.references and not config.force:
@@ -53,7 +85,7 @@ def describe(entry: Entry, force: bool) -> str:
 
 def render(preview: Preview) -> str:
     heading = f"remove_tags={preview.config.remove_tags}, force={preview.config.force}\n"
-    if not preview.config.keep:
+    if not preview.config.keep and not preview.config.keep_latest:
         heading += "警告：沒有保留規則 (keep: [])\n"
     return heading + "\n\n".join(describe(entry, preview.config.force) for entry in preview.entries)
 

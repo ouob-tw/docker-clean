@@ -65,7 +65,7 @@ def main() -> int:
         # Untag one by one without force so multi-tag images need no force and running
         # containers keep their tags; with --force keep deleting by ID.
         config = Config(keep=saved.keep + tuple(args.keep), remove_tags=not args.force,
-                        force=args.force)
+                        force=args.force, keep_latest=saved.keep_latest)
         config.validate()
         try:
             patterns = [re.compile(value) for value in args.delete]
@@ -89,6 +89,8 @@ def main() -> int:
                 print(json.dumps({"mode": "execute" if args.yes else "preview",
                                   "ok": not failed, "force": args.force, "unused_days": unused_days,
                                   "keep": list(config.keep), "delete": args.delete,
+                                  "keep_latest": [{"match": m, "count": c}
+                                                  for m, c in config.keep_latest],
                                   "entries": [asdict(entry) for entry in preview.entries],
                                   "results": [asdict(result) for result in results]}, ensure_ascii=False))
             else:
